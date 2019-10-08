@@ -43,7 +43,6 @@ public class ReactiveModel implements ReactiveBehavior {
 		
 		// Create and stock the states
 		myStates = new ArrayList<State>();
-		State state;
 		Task task;
 		int i = 0;
 		for (City city1 : topology) {
@@ -113,12 +112,6 @@ public class ReactiveModel implements ReactiveBehavior {
 			myRewards.put(state_id, stateRewards);
 		}
 		
-		//TODO : Build the transitions, Best, and V
-		
-
-		
-		
-		
 	}
 
 		
@@ -142,4 +135,4 @@ public class ReactiveModel implements ReactiveBehavior {
 	}
 	}
 
-}
+
