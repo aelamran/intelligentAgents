@@ -18,8 +18,8 @@ import logist.topology.Topology.City;
 
 public class ReactiveModel implements ReactiveBehavior {
 
-	private Random random;
-	private double pPickup;
+	//private Random random;
+	//private double pPickup;
 	private int numActions;
 	private Agent myAgent;
 	private ArrayList<State> myStates;
@@ -36,8 +36,8 @@ public class ReactiveModel implements ReactiveBehavior {
 		// If the property is not present it defaults to 0.95
 		Double discount = agent.readProperty("discount-factor", Double.class, 0.95);
 
-		this.random = new Random();
-		this.pPickup = discount;
+		//this.random = new Random();
+		//this.pPickup = discount;
 		this.numActions = 0;
 		this.myAgent = agent;
 
@@ -87,8 +87,8 @@ public class ReactiveModel implements ReactiveBehavior {
 
 		// Build the rewards and transitions
 		buildRewardsAndTransitions(topology, td, agent, costPerKm);
-
-		// TODO : Build the transitions, Best, and V
+		
+		// Build the best values table
 		buildBestValueTable(topology, td, agent, costPerKm, discount);
 
 	}
@@ -115,11 +115,11 @@ public class ReactiveModel implements ReactiveBehavior {
 		
 		Double[] oldValueTable = new Double[myStates.size()];
 		Arrays.fill(oldValueTable, new Random().nextDouble());
+		
+		do {
 
-		int k=0;
 		
 		
-		do{k++;
 			diff = 0;
 			oldValueTable = valueTable.clone();
 			for (State state : myStates) {
@@ -153,9 +153,9 @@ public class ReactiveModel implements ReactiveBehavior {
 				denominator = dotProduct(oldValueTable, oldValueTable);
 				normalizedDiff = diff/denominator;
 				
-			}
-		} while(normalizedDiff > TRESHOLD_MIN);
-		System.out.println("Zero");
+			
+		} 
+	}while(normalizedDiff > TRESHOLD_MIN);
 	}
 	
 
@@ -228,6 +228,7 @@ public class ReactiveModel implements ReactiveBehavior {
 			myRewards.put(state_id, stateRewards);
 
 		}
+		System.out.println("CHEDITEK");
 
 	}
 
@@ -272,6 +273,8 @@ public class ReactiveModel implements ReactiveBehavior {
 		numActions++;
 
 		return action;
+	
 	}
+}
 
 

@@ -42,8 +42,4 @@ public class State {
 		this.id = id;
 	}
 	
-	
-	
-	
-
 }
