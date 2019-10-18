@@ -15,6 +15,7 @@ public class State {
 	private City currentCity;
 
 	//private Task currentTask;
+	private double cost=0;
 	private int id;
 	
 	public State(TaskSet currentTasks, TaskSet availableTasks, City currentCity, int id) {
@@ -60,6 +61,15 @@ public class State {
 		else {
 			return false;
 		}
+
+
+	public double getCost() {
+		return cost;
+	}
+
+
+	public void setCost(double cost) {
+		this.cost = cost;
 	}
 	
 }

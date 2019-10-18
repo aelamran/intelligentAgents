@@ -79,7 +79,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		switch (algorithm) {
 		case ASTAR:
 			// ...
-			plan = naivePlan(vehicle, tasks);
+			plan = aStarPlan(vehicle, tasks);
 			break;
 		case BFS:
 			int V = tasks.size();
@@ -192,6 +192,137 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		return plan;
 	}
 	
+
+
+	private Plan aStarPlan(Vehicle vehicle, TaskSet tasks) {
+		City current = vehicle.getCurrentCity();
+		Plan plan = new Plan(current);
+
+		PriorityQueue<State> Q = new PriorityQueue<State>(new Comparator<State>() {
+			@Override
+			public int compare(State state1, State state2) {
+				return Double.compare(state1.getCost(), state2.getCost());
+				// return Integer.compare(node0.getF(), node1.getF());
+			}
+		});
+		int i = 0;
+		State initialState = new State(vehicle.getCurrentTasks(), tasks, vehicle.getCurrentCity(), i);
+		i++;
+		initialState.setCost(0.0);
+		Q.add(initialState);
+		// We store states ids and costs in C
+		HashMap<Integer, Double> C = new HashMap<Integer, Double>();
+
+		HashMap<Integer, State> parentState = new HashMap<Integer, State>();
+		HashMap<Integer, Action> previousAction = new HashMap<Integer, Action>();
+
+		State headState = initialState;
+		List<State> successors;
+		while (!Q.isEmpty()) {
+			////System.out.println("Q not empty");
+			successors = new ArrayList<State>();
+			headState = Q.poll();
+			if (isFinalState(headState)) {
+				break;
+			}
+			if ((!C.containsKey(headState.getId())) || (C.get(headState.getId()) > headState.getCost())) {
+				C.put(headState.getId(), headState.getCost());
+				
+				////System.out.println(headState.getAvailableTasks().size());
+				for (Task task : headState.getCurrentTasks()) {
+					TaskSet currentTasks = headState.getCurrentTasks().clone();
+					currentTasks.remove(task);
+					State newState = new State(currentTasks, headState.getAvailableTasks(), task.deliveryCity, i);
+					
+					newState.setCost(getCost(headState, newState));
+					successors.add(newState);
+					
+					parentState.put(i, headState);
+					previousAction.put(i, new Delivery(task));
+					i++;
+				}
+
+				for (Task task : headState.getAvailableTasks()) {
+					if (task.weight < (vehicle.capacity() - headState.getCurrentTasks().weightSum())) {
+						
+						TaskSet availableTasks = headState.getAvailableTasks().clone();
+						availableTasks.remove(task);
+						
+						TaskSet currentTasks = headState.getCurrentTasks().clone();
+						currentTasks.add(task);
+						
+						State newState = new State(currentTasks, availableTasks, task.pickupCity, i);
+						
+						newState.setCost(getCost(headState, newState));
+						successors.add(newState);
+						
+						parentState.put(i, headState);
+						previousAction.put(i, new Pickup(task));
+						
+						i++;
+					}
+				}
+				successors.sort(new Comparator<State>() {
+					@Override
+					public int compare(State state1, State state2) {
+						return Double.compare(state1.getCost(), state2.getCost());
+						// return Integer.compare(node0.getF(), node1.getF());
+					}
+				});
+				Q.addAll(successors);
+			}
+		}
+		ArrayList<Action> finalActions = new ArrayList<Action>();
+		ArrayList<City> citiesPath = new ArrayList<Topology.City>();
+		
+		ArrayList<Action> pathActions = new ArrayList<Action>();
+
+		City oldCity = current;
+
+		while(parentState.containsKey(headState.getId()) ){
+			////System.out.println(headState.getId());
+			Action action = previousAction.get(headState.getId());
+			finalActions.add(action);
+			citiesPath.add(headState.getCurrentCity());
+			headState = parentState.get(headState.getId());	
+			
+			/*for (City city : oldCity.pathTo(headState.getCurrentCity())) {
+				pathActions.add(0, new Move(city));
+			}
+			pathActions.add(0, action);
+			oldCity = headState.getCurrentCity();*/
+		}
+		//plan = new Plan(current, pathActions);
+		for (int j = finalActions.size()-1; j >= 0; j--) {
+			Action action = finalActions.get(j);
+			//plan.append(new Move(citiesPath.get(j)));
+			for (City city : oldCity.pathTo(citiesPath.get(j))) {
+				//System.out.println(city);
+				plan.appendMove(city);
+			}
+			oldCity = citiesPath.get(j);
+			//System.out.println(finalActions.get(j).toString());
+			plan.append(action);
+		}
+		
+		return plan;
+
+	}
+
+	private double getCost(State headState, State newState) {
+		// TODO Auto-generated method stub
+		
+		return headState.getCurrentCity().distanceTo(newState.getCurrentCity());
+	}
+
+	private boolean isFinalState(State state) {
+		return state.getAvailableTasks().isEmpty() && state.getCurrentTasks().isEmpty();
+	}
+
+	private int cost(State state) {
+		return 0;
+	}
+
 	private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
 		City current = vehicle.getCurrentCity();
 		Plan plan = new Plan(current);

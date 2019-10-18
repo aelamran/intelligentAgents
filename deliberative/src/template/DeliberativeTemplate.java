@@ -59,15 +59,8 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			plan = naivePlan(vehicle, tasks);
 			break;
 		case BFS:
-			
-			boolean visited[] = new boolean[V];
-			LinkedList<Integer> queue = new LinkedList<Integer>();
-			
-			
-			
 			// ...
 			plan = naivePlan(vehicle, tasks);
-			
 			break;
 		default:
 			throw new AssertionError("Should not happen.");
