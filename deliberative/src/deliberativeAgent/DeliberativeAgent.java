@@ -26,6 +26,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 	
 	/* Environment */
 	Topology topology;
+	
 	TaskDistribution td;
 	
 	/* the properties of the agent */

@@ -61,6 +61,8 @@ public class State {
 		else {
 			return false;
 		}
+	}
+		
 
 
 	public double getCost() {
