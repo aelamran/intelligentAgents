@@ -71,7 +71,6 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 	}
 	
 	@Override
-	
 	public Plan plan(Vehicle vehicle, TaskSet tasks) {
 		Plan plan;
 
@@ -94,7 +93,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 	}
 	
 	private Plan bfsPlan(Vehicle vehicle, TaskSet tasks) {
-		
+		System.out.println(tasks);
 		Plan plan = new Plan(vehicle.getCurrentCity());
 		int i =0;
 		State initialState = new State(vehicle.getCurrentTasks(), tasks, vehicle.getCurrentCity(), i);
@@ -117,7 +116,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 			
 			initialState = queue.poll();				
 			if(initialState.isGoalState()){
-				
+				tmpCost = 0.0;
 				LinkedList<Action> path = new LinkedList<Action>();
 				LinkedList<City> cities = new LinkedList<City>();
 				State parentState = initialState;
@@ -126,10 +125,11 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 					Action toAdd = parentAction.get(parentState.getId());
 					path.add(0, toAdd);
 					cities.add(0, parentState.getCurrentCity());
-					tmpCost += vehicle.costPerKm()*interState.getCurrentCity().distanceTo(parentState.getCurrentCity());
 					parentState = parentStates.get(parentState.getId());
+					tmpCost += vehicle.costPerKm()*interState.getCurrentCity().distanceTo(parentState.getCurrentCity());
 					interState = parentState;
 				}
+				System.out.println(tmpCost);
 				if(tmpCost<finalCost) {
 					finalCost = tmpCost;
 					bestPath = path;
@@ -170,7 +170,10 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 
 			
 			for(State state: neighboursState) {
-				if( ! visitedState(visitedState, state) ) {
+				if(isFinalState(state)) {
+					queue.add(state);
+				}
+				if(!(isFinalState(state)) && !visitedState(visitedState, state)) {
 					visitedState.add(state);
 					queue.add(state);
 				}
