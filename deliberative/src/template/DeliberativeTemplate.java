@@ -88,6 +88,8 @@ public class DeliberativeTemplate implements DeliberativeBehavior {
 			// set current city
 			current = task.deliveryCity;
 		}
+		System.out.println("total distance naive "+plan.totalDistance());
+
 		return plan;
 	}
 

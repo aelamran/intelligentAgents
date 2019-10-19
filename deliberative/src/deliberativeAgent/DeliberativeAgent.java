@@ -52,18 +52,19 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		// ...
 	}
 	
-	public boolean visitedState(List<State> visited, State currentState) {
-		
-		for(State state:visited) {
-			
-			
-			if(state.getAvailableTasks().equals(currentState.getAvailableTasks()) &&
-					state.getCurrentCity().equals(currentState.getCurrentCity()) &&
-					state.getCurrentTasks().equals(currentState.getCurrentTasks())) {
-				return true;
-			}
-			
-			
+	public boolean stateEqualsState(State state, State currentState) {
+		if(state.getAvailableTasks().equals(currentState.getAvailableTasks()) &&
+				state.getCurrentCity().equals(currentState.getCurrentCity()) &&
+				state.getCurrentTasks().equals(currentState.getCurrentTasks())) {
+			return true;
+		}
+		return false;
+	}
+	public boolean visitedState(List<State> visited, State currentState) {	
+		for(State state:visited) {		
+				if (stateEqualsState(state, currentState)) {
+					return true;
+				}
 		}
 		
 		return false;	
@@ -169,7 +170,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 
 			
 			for(State state: neighboursState) {
-				if(!visitedState(visitedState, state)) {
+				if( ! visitedState(visitedState, state) ) {
 					visitedState.add(state);
 					queue.add(state);
 				}
@@ -188,12 +189,26 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 			plan.append(action);
 			
 		}
-		
+		System.out.println("total distance bfs "+plan.totalDistance());
+
 		return plan;
 	}
 
+	private boolean visitedAndHigherCost(List<State> visited, State currentState) {
+		for (State state : visited) {
+			if (stateEqualsState(state, currentState)) {
+				if (state.getCost() > currentState.getCost()) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
 
 	private Plan aStarPlan(Vehicle vehicle, TaskSet tasks) {
+		System.out.println(vehicle.capacity());
+		System.out.println(tasks.weightSum());
+		int costPerKm = vehicle.costPerKm();
 		City current = vehicle.getCurrentCity();
 		Plan plan = new Plan(current);
 
@@ -210,7 +225,8 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		initialState.setCost(0.0);
 		Q.add(initialState);
 		// We store states ids and costs in C
-		HashMap<Integer, Double> C = new HashMap<Integer, Double>();
+		HashMap<Integer, Double> visitedStatesHashMap = new HashMap<Integer, Double>();
+		List<State> visitedStates = new ArrayList<State>();
 
 		HashMap<Integer, State> parentState = new HashMap<Integer, State>();
 		HashMap<Integer, Action> previousAction = new HashMap<Integer, Action>();
@@ -224,8 +240,10 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 			if (isFinalState(headState)) {
 				break;
 			}
-			if ((!C.containsKey(headState.getId())) || (C.get(headState.getId()) > headState.getCost())) {
-				C.put(headState.getId(), headState.getCost());
+			//if ((!visitedStatesHashMap.containsKey(headState.getId())) || (visitedStatesHashMap.get(headState.getId()) > headState.getCost())) {
+			if (!visitedState(visitedStates, headState) ||  visitedAndHigherCost(visitedStates, headState)) {	
+				//visitedStatesHashMap.put(headState.getId(), headState.getCost());
+				visitedStates.add(headState);
 				
 				////System.out.println(headState.getAvailableTasks().size());
 				for (Task task : headState.getCurrentTasks()) {
@@ -233,7 +251,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 					currentTasks.remove(task);
 					State newState = new State(currentTasks, headState.getAvailableTasks(), task.deliveryCity, i);
 					
-					newState.setCost(getCost(headState, newState));
+					newState.setCost(getCost(headState, newState, costPerKm));
 					successors.add(newState);
 					
 					parentState.put(i, headState);
@@ -252,7 +270,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 						
 						State newState = new State(currentTasks, availableTasks, task.pickupCity, i);
 						
-						newState.setCost(getCost(headState, newState));
+						newState.setCost(getCost(headState, newState, costPerKm));
 						successors.add(newState);
 						
 						parentState.put(i, headState);
@@ -300,18 +318,30 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 				plan.appendMove(city);
 			}
 			oldCity = citiesPath.get(j);
-			//System.out.println(finalActions.get(j).toString());
+			System.out.println(finalActions.get(j).toString());
 			plan.append(action);
 		}
-		
+		System.out.println("total distance astar "+plan.totalDistance());
 		return plan;
 
 	}
 
-	private double getCost(State headState, State newState) {
+	private double getCost(State headState, State newState, int costPerKm) {
 		// TODO Auto-generated method stub
+		Double heuristic = 0.0;
+		City currentCity = newState.getCurrentCity();
+		for (Task task : newState.getCurrentTasks()) {
+			heuristic += currentCity.distanceTo(task.deliveryCity);
+			currentCity = task.deliveryCity;
+		}
+		for (Task task : newState.getAvailableTasks()) {
+			heuristic += currentCity.distanceTo(task.pickupCity);
+			currentCity = task.pickupCity;
+			heuristic += currentCity.distanceTo(task.deliveryCity);
+			currentCity = task.deliveryCity;
+		}
 		
-		return headState.getCurrentCity().distanceTo(newState.getCurrentCity());
+		return headState.getCurrentCity().distanceTo(newState.getCurrentCity()) * costPerKm + heuristic;
 	}
 
 	private boolean isFinalState(State state) {
@@ -347,7 +377,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 
 	@Override
 	public void planCancelled(TaskSet carriedTasks) {
-		
+		System.out.println("plan cancelled");
 		if (!carriedTasks.isEmpty()) {
 			// This cannot happen for this simple agent, but typically
 			// you will need to consider the carriedTasks when the next

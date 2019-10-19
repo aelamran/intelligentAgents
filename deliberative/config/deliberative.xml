@@ -5,13 +5,13 @@
 
 	<!-- global settings -->
 	<settings import="config/settings_default.xml" />
-	
+
 	<!-- load the topology -->
 	<topology import="config/topology/switzerland.xml" />
-	
+
 	<!-- load agents -->
 	<agents import="config/agents.xml" />
-	
+
 	<!-- define task distribution -->
 	<tasks number="6" rngSeed="23456">
 		<!--
@@ -22,7 +22,7 @@
 		<weight distribution="constant" value="3" />
 
 	</tasks>
-	
+
 	<!-- the companies and vehicles in the simulation -->
 	<companies>
 		<company name="Company A">
@@ -35,7 +35,7 @@
 				<set cost-per-km="5" />
 			</vehicle>
 		</company>
-		
+
 		<company name="Company B">
 			<!-- the second vehicle (red) -->
 			<vehicle name="Vehicle 2">
@@ -46,7 +46,7 @@
 				<set cost-per-km="5" />
 			</vehicle>
 		</company>
-		
+
 		<company name="Company C">
 			<!-- the third vehicle (green) -->
 			<vehicle name="Vehicle 3">
@@ -57,7 +57,7 @@
 				<set cost-per-km="5" />
 			</vehicle>
 		</company>
-		
+
 		<company name="Company D">
 			<!-- the fourth vehicle (yellow) -->
 			<vehicle name="Vehicle 4">
@@ -68,7 +68,7 @@
 				<set cost-per-km="5" />
 			</vehicle>
 		</company>
-		
+
 		<company name="Company E">
 			<!-- the fifth vehicle (magenta) -->
 			<vehicle name="Vehicle 5">
@@ -79,7 +79,7 @@
 				<set cost-per-km="5" />
 			</vehicle>
 		</company>
-		
+
 		<company name="Company F">
 			<!-- the sixth vehicle (cyan) -->
 			<vehicle name="Vehicle 6">
@@ -91,5 +91,5 @@
 			</vehicle>
 		</company>
 	</companies>
-	
+
 </configuration>
