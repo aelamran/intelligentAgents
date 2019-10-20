@@ -61,7 +61,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		if(state.getAvailableTasks().equals(currentState.getAvailableTasks()) &&
 				state.getCurrentCity().equals(currentState.getCurrentCity()) &&
 				state.getCurrentTasks().equals(currentState.getCurrentTasks()) &&
-				state.getCost() == currentState.getCost()){
+				state.getCost() < currentState.getCost()){
 
 
 
@@ -121,12 +121,14 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		double finalCost = Double.MAX_VALUE;
 		visitedState.add(initialState);
 		queue.add(initialState);
+		int numbGoals = 0;
 		
 		while(queue.size() != 0)
 		{
 			initialState = queue.poll();				
 			if(initialState.isGoalState()){
-				System.out.println("YESS");
+				numbGoals++;
+				System.out.println(numbGoals);
 				tmpCost = 0.0;
 				LinkedList<Action> path = new LinkedList<Action>();
 				LinkedList<City> cities = new LinkedList<City>();
