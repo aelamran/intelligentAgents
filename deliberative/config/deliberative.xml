@@ -12,7 +12,7 @@
 	<!-- load agents -->
 	<agents import="config/agents.xml" />
 
-	<!-- define task distribution -->
+	<!-- define task distribution OLD SEED 23456 -->
 	<tasks number="6" rngSeed="23456">
 		<!--
 			the probabilities, rewards and weight of tasks
