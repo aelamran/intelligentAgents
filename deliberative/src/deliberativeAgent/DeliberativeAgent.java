@@ -61,7 +61,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		if(state.getAvailableTasks().equals(currentState.getAvailableTasks()) &&
 				state.getCurrentCity().equals(currentState.getCurrentCity()) &&
 				state.getCurrentTasks().equals(currentState.getCurrentTasks()) &&
-				state.getCost() < currentState.getCost()){
+				(state.getCost() + state.getHeuristic() < currentState.getCost() + currentState.getHeuristic())){
 					return true;
 		}
 		return false;
@@ -327,28 +327,55 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 
 	private double computeHeuristic(State headState, State newState, int costPerKm) {
 		// TODO Auto-generated method stub
-		Double heuristic = 0.0;
+		Double heuristic;
+		Double mini = Double.MAX_VALUE;
+		Double maxi = 0.0;
 		//int i = 0;
 		City currentCity = newState.getCurrentCity();
 		for (Task task : newState.getCurrentTasks()) {
-			heuristic += currentCity.distanceTo(task.deliveryCity);
+			//heuristic += currentCity.distanceTo(task.deliveryCity);
+			Double dist = currentCity.distanceTo(task.deliveryCity);
+			if (mini > dist){
+				mini = dist;
+			}
+			if (maxi < dist){
+				maxi = dist;
+			}
 			//currentCity = task.deliveryCity;
 			//i++;
 		}
 		for (Task task : newState.getAvailableTasks()) {
-			heuristic += currentCity.distanceTo(task.pickupCity);
+			//heuristic += currentCity.distanceTo(task.pickupCity);
 			//currentCity = task.pickupCity;
-			heuristic += currentCity.distanceTo(task.deliveryCity);
+			//heuristic += currentCity.distanceTo(task.deliveryCity);
 			//currentCity = task.deliveryCity;
-
-			//i++;
+		/*	Double dist = currentCity.distanceTo(task.pickupCity);
+			if (mini > dist){
+				mini = dist;
+			}
+			if (maxi < dist){
+				maxi = dist;
+			}
+		*/	
+			Double dist = task.pickupCity.distanceTo(task.deliveryCity);
+			if (mini > dist){
+				mini = dist;
+			}
+			if (maxi < dist){
+				maxi = dist;
+			}			//i++;
 		}
 		//return 0;
-		return heuristic*costPerKm;		
+		if (mini== Double.MAX_VALUE){
+			System.out.println("max");
+			mini = 0.0;
+		}
+		heuristic = (mini + maxi)/2;
+		return maxi*costPerKm;		
 		//return headState.getCurrentCity().distanceTo(newState.getCurrentCity()) * costPerKm + heuristic*costPerKm;
 	}
 
-	private double getCost4(State headState, State newState, int costPerKm) {
+	private double computeHeuristic2(State headState, State newState, int costPerKm) {
 		// TODO Auto-generated method stub
 		Double heuristic = 0.0;
 		City currentCity = newState.getCurrentCity();
@@ -362,7 +389,8 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		}
 		//System.out.println(heuristic);
 		//heuristic = newState.getCurrentCity().distanceTo(currentCity)*costPerKm;
-		return headState.getCurrentCity().distanceTo(newState.getCurrentCity()) * costPerKm + heuristic;
+		return heuristic;
+		//return headState.getCurrentCity().distanceTo(newState.getCurrentCity()) * costPerKm + heuristic;
 	}
 //old
 	private double getCost7(State headState, State newState, int costPerKm) {
