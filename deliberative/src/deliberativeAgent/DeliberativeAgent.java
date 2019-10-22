@@ -102,13 +102,13 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		
 		i++;
 		
-		List<State> visitedState = new LinkedList<State>();
+		List<State> visitedState = new ArrayList<State>();
 		LinkedList<State> queue = new LinkedList<State>();
 		
 		HashMap <Integer, State> parentStates = new HashMap<Integer, State>();
 		HashMap <Integer, Action> parentAction = new HashMap<Integer, Action>();
-		LinkedList<Action> bestPath = new LinkedList<Action>();
-		LinkedList<City> bestCitiesPath = new LinkedList<City>();
+		ArrayList<Action> bestPath = new ArrayList<Action>();
+		ArrayList<City> bestCitiesPath = new ArrayList<City>();
 		double tmpCost = 0.0;
 		double finalCost = Double.MAX_VALUE;
 		visitedState.add(initialState);
@@ -121,8 +121,8 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 			if(initialState.isGoalState()){
 				numbGoals++;
 				tmpCost = 0.0;
-				LinkedList<Action> path = new LinkedList<Action>();
-				LinkedList<City> cities = new LinkedList<City>();
+				ArrayList<Action> path = new ArrayList<Action>();
+				ArrayList<City> cities = new ArrayList<City>();
 				
 				State parentState = initialState;
 				State interState = initialState;
@@ -258,8 +258,8 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 					currentTasks.remove(task);
 					State newState = new State(currentTasks, headState.getAvailableTasks(), task.deliveryCity, i);
 					
-					
-					newState.setCost(headState.getCurrentCity().distanceTo(task.deliveryCity));
+					newState.setCost(headState.getCost() + headState.getCurrentCity().distanceTo(task.deliveryCity));
+					//newState.setCost(headState.getCurrentCity().distanceTo(task.deliveryCity));
 					newState.setHeuristic(computeHeuristic(headState, newState, costPerKm));
 					successors.add(newState);
 					
@@ -279,7 +279,8 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 						
 						State newState = new State(currentTasks, availableTasks, task.pickupCity, i);
 						
-						newState.setCost(headState.getCurrentCity().distanceTo(task.pickupCity));
+					newState.setCost(headState.getCost() + headState.getCurrentCity().distanceTo(task.pickupCity));
+						//newState.setCost(headState.getCurrentCity().distanceTo(task.pickupCity));
 						newState.setHeuristic(computeHeuristic(headState, newState, costPerKm));
 						successors.add(newState);
 						
@@ -331,15 +332,20 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		City currentCity = newState.getCurrentCity();
 		for (Task task : newState.getCurrentTasks()) {
 			heuristic += currentCity.distanceTo(task.deliveryCity);
+			//currentCity = task.deliveryCity;
 			//i++;
 		}
 		for (Task task : newState.getAvailableTasks()) {
 			heuristic += currentCity.distanceTo(task.pickupCity);
+			//currentCity = task.pickupCity;
 			heuristic += currentCity.distanceTo(task.deliveryCity);
+			//currentCity = task.deliveryCity;
+
 			//i++;
 		}
-		
-		return headState.getCurrentCity().distanceTo(newState.getCurrentCity()) * costPerKm + heuristic*costPerKm;
+		//return 0;
+		return heuristic*costPerKm;		
+		//return headState.getCurrentCity().distanceTo(newState.getCurrentCity()) * costPerKm + heuristic*costPerKm;
 	}
 
 	private double getCost4(State headState, State newState, int costPerKm) {
