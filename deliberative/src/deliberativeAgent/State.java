@@ -79,7 +79,14 @@ public class State {
 	public void setHeuristic(double heuristic) {
 		this.heuristic = heuristic;
 	}
-		@Override
+
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(currentTasks, currentCity, availableTasks, cost, heuristic);
+	}
+
+	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;

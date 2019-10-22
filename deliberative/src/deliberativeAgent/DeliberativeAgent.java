@@ -6,6 +6,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
 import java.util.HashSet;
+import java.util.Collection;
+import java.util.Set;
 
 import logist.agent.Agent;
 import logist.behavior.DeliberativeBehavior;
@@ -68,7 +70,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		return false;
 	}
 
-	public boolean visitedState(List<State> visited, State currentState){	
+	public boolean visitedState(Collection<State> visited, State currentState){	
 		for(State state:visited) {		
 				if (stateEqualsState(state, currentState)) {
 					return true;
@@ -179,10 +181,13 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 				if(isFinalState(state)) {
 					queue.add(state);
 				}
-				if(!(isFinalState(state)) && !visitedState.contains(state)) {
+				//if(!(isFinalState(state)) && !visitedState.contains(state)) {
+				if(!(isFinalState(state)) && !visitedState(visitedState, state)) {
+					
 					visitedState.add(state);
 					queue.add(state);
 				}
+				
 			}
 			
 		}		
