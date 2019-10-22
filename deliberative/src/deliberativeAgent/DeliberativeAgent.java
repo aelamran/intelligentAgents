@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.HashSet;
 
 import logist.agent.Agent;
 import logist.behavior.DeliberativeBehavior;
@@ -102,7 +103,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		
 		i++;
 		
-		List<State> visitedState = new ArrayList<State>();
+		HashSet<State> visitedState = new HashSet<State>();
 		LinkedList<State> queue = new LinkedList<State>();
 		
 		HashMap <Integer, State> parentStates = new HashMap<Integer, State>();
@@ -178,7 +179,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 				if(isFinalState(state)) {
 					queue.add(state);
 				}
-				if(!(isFinalState(state)) && !visitedState(visitedState, state)) {
+				if(!(isFinalState(state)) && !visitedState.contains(state)) {
 					visitedState.add(state);
 					queue.add(state);
 				}
