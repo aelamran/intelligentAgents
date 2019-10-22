@@ -1,11 +1,6 @@
 package deliberativeAgent;
 import logist.task.TaskSet;
-
 import logist.topology.Topology.City;
-
-import java.util.List;
-
-import logist.task.Task;
 
 
 public class State {
@@ -17,6 +12,7 @@ public class State {
 	//private Task currentTask;
 	private double cost=0;
 	private int id;
+	private double heuristic=0;
 	
 	public State(TaskSet currentTasks, TaskSet availableTasks, City currentCity, int id) {
 		super();
@@ -69,9 +65,17 @@ public class State {
 		return cost;
 	}
 
+	public double getHeuristic() {
+		return heuristic;
+	}
+
 
 	public void setCost(double cost) {
 		this.cost = cost;
+	}
+
+	public void setHeuristic(double heuristic) {
+		this.heuristic = heuristic;
 	}
 	
 }

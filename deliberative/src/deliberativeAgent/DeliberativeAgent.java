@@ -224,7 +224,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		PriorityQueue<State> Q = new PriorityQueue<State>(new Comparator<State>() {
 			@Override
 			public int compare(State state1, State state2) {
-				return Double.compare(state1.getCost(), state2.getCost());
+				return Double.compare(state1.getCost() + state1.getHeuristic(), state2.getCost()+state2.getHeuristic());
 			}
 		});
 		int i = 0;
@@ -258,7 +258,9 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 					currentTasks.remove(task);
 					State newState = new State(currentTasks, headState.getAvailableTasks(), task.deliveryCity, i);
 					
-					newState.setCost(headState.getCost()+ getCost(headState, newState, costPerKm));
+					
+					newState.setCost(headState.getCost());
+					newState.setHeuristic(computeHeuristic(headState, newState, costPerKm));
 					successors.add(newState);
 					
 					parentState.put(i, headState);
@@ -277,7 +279,8 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 						
 						State newState = new State(currentTasks, availableTasks, task.pickupCity, i);
 						
-						newState.setCost(headState.getCost()+getCost(headState, newState, costPerKm));
+						newState.setCost(headState.getCost());
+						newState.setHeuristic(computeHeuristic(headState, newState, costPerKm));
 						successors.add(newState);
 						
 						parentState.put(i, headState);
@@ -321,19 +324,19 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 
 	}
 
-	private double getCost(State headState, State newState, int costPerKm) {
+	private double computeHeuristic(State headState, State newState, int costPerKm) {
 		// TODO Auto-generated method stub
 		Double heuristic = 0.0;
-		int i = 0;
+		//int i = 0;
 		City currentCity = newState.getCurrentCity();
 		for (Task task : newState.getCurrentTasks()) {
 			heuristic += currentCity.distanceTo(task.deliveryCity);
-			i++;
+			//i++;
 		}
 		for (Task task : newState.getAvailableTasks()) {
 			heuristic += currentCity.distanceTo(task.pickupCity);
 			heuristic += currentCity.distanceTo(task.deliveryCity);
-			i++;
+			//i++;
 		}
 		
 		return headState.getCurrentCity().distanceTo(newState.getCurrentCity()) * costPerKm + heuristic*costPerKm;
