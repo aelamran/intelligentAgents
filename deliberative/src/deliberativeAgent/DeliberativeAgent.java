@@ -60,16 +60,6 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		// ...
 	}
 	
-	public boolean stateEqualsState(State state, State currentState) {
-		if(state.getAvailableTasks().equals(currentState.getAvailableTasks()) &&
-				state.getCurrentCity().equals(currentState.getCurrentCity()) &&
-				state.getCurrentTasks().equals(currentState.getCurrentTasks()) &&
-				(state.getCost() + state.getHeuristic() < currentState.getCost() + currentState.getHeuristic())){
-					return true;
-		}
-		return false;
-	}
-
 	public boolean visitedState(Collection<State> visited, State currentState){	
 		for(State state:visited) {		
 				if (stateEqualsState(state, currentState)) {
@@ -78,6 +68,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		}
 		return false;	
 	}
+	
 	
 	@Override
 	public Plan plan(Vehicle vehicle, TaskSet tasks) {
@@ -98,38 +89,33 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 	}
 	
 	private Plan bfsPlan(Vehicle vehicle, TaskSet tasks) {
-        long startTime = System.nanoTime();
+		long startTime = System.nanoTime();
+		HashMap <Integer, State> parentStates = new HashMap<Integer, State>();
+		HashMap <Integer, Action> parentAction = new HashMap<Integer, Action>();
+		ArrayList<Action> finalActions = new ArrayList<Action>();
+		ArrayList<City> bestCitiesPath = new ArrayList<City>();
+		HashSet<State> visitedState = new HashSet<State>();
+		LinkedList<State> queue = new LinkedList<State>();	
+	
 		Plan plan = new Plan(vehicle.getCurrentCity());
 		int i =0;
 		State initialState = new State(vehicle.getCurrentTasks(), tasks, vehicle.getCurrentCity(), i);
-		
 		i++;
-		
-		HashSet<State> visitedState = new HashSet<State>();
-		LinkedList<State> queue = new LinkedList<State>();
-		
-		HashMap <Integer, State> parentStates = new HashMap<Integer, State>();
-		HashMap <Integer, Action> parentAction = new HashMap<Integer, Action>();
-		ArrayList<Action> bestPath = new ArrayList<Action>();
-		ArrayList<City> bestCitiesPath = new ArrayList<City>();
 		double tmpCost = 0.0;
 		double finalCost = Double.MAX_VALUE;
 		visitedState.add(initialState);
 		queue.add(initialState);
-		int numbGoals = 0;
 		
 		while(queue.size() != 0)
 		{
 			initialState = queue.poll();				
 			if(initialState.isGoalState()){
-				numbGoals++;
 				tmpCost = 0.0;
 				ArrayList<Action> path = new ArrayList<Action>();
 				ArrayList<City> cities = new ArrayList<City>();
 				
 				State parentState = initialState;
 				State interState = initialState;
-				
 				while(parentStates.containsKey(parentState.getId())){
 					Action toAdd = parentAction.get(parentState.getId());
 					path.add(0, toAdd);
@@ -141,12 +127,11 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 				
 				if(tmpCost<=finalCost) {
 					finalCost = tmpCost;
-					bestPath = path;
+					finalActions = path;
 					bestCitiesPath = cities;
 				}
 				
 			}
-			
 			
 			List<State> neighboursState = new ArrayList<State>();
 			for (Task task: initialState.getCurrentTasks()) {
@@ -162,7 +147,6 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 			
 			for(Task task: initialState.getAvailableTasks()) {
 				if(vehicle.capacity() >= initialState.getCurrentTasks().weightSum()+ task.weight) {
-					
 					TaskSet carriedTasks = initialState.getCurrentTasks().clone();
 					TaskSet availableTasks = initialState.getAvailableTasks().clone();				
 					availableTasks.remove(task);
@@ -187,67 +171,37 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 					visitedState.add(state);
 					queue.add(state);
 				}
-				
 			}
-			
 		}		
-		
-		City oldCity = vehicle.getCurrentCity();
-		plan = new Plan(oldCity);
-		for (int j=0; j<bestPath.size(); j++) {
-			Action action = bestPath.get(j);
-			for (City city : oldCity.pathTo(bestCitiesPath.get(j))) {
-				plan.appendMove(city);
-			}
-			oldCity = bestCitiesPath.get(j);
-			plan.append(action);
-			
-		}
-		System.out.println((System.nanoTime() - startTime)/1000000000.0 + " seconds have passed for BFS");
-		System.out.println("total distance bfs "+plan.totalDistance());
-		System.out.println(plan);
-		return plan;
-	}
-
-	private boolean visitedAndHigherCost(List<State> visited, State currentState) {
-		for (State state : visited) {
-			if (stateEqualsState(state, currentState)) {
-				if (state.getCost()  > currentState.getCost()) {
-					return true;
-				}
-			}
-		}
-		return false;
+		return getPlan(vehicle, finalActions, bestCitiesPath);
 	}
 
 	private Plan aStarPlan(Vehicle vehicle, TaskSet tasks) {
-        long startTime = System.nanoTime();
-
-		int costPerKm = vehicle.costPerKm();
-		City current = vehicle.getCurrentCity();
-		Plan plan = new Plan(current);
-
+		HashMap<Integer, Double> visitedStatesHashMap = new HashMap<Integer, Double>();
+		List<State> visitedStates = new ArrayList<State>();
+		HashMap<Integer, State> parentState = new HashMap<Integer, State>();
+		HashMap<Integer, Action> previousAction = new HashMap<Integer, Action>();
+		ArrayList<Action> finalActions = new ArrayList<Action>();
+		ArrayList<City> finalCitiesPath = new ArrayList<Topology.City>();
+		ArrayList<Action> pathActions = new ArrayList<Action>();
 		PriorityQueue<State> Q = new PriorityQueue<State>(new Comparator<State>() {
 			@Override
 			public int compare(State state1, State state2) {
 				return Double.compare(state1.getCost() + state1.getHeuristic(), state2.getCost()+state2.getHeuristic());
 			}
 		});
+
+        long startTime = System.nanoTime();
+		int costPerKm = vehicle.costPerKm();
+		City current = vehicle.getCurrentCity();
+		Plan plan = new Plan(current);
 		int i = 0;
-
 		TaskSet vehicleCurrentTasks = vehicle.getCurrentTasks();
-
 		State initialState = new State(vehicleCurrentTasks, tasks, vehicle.getCurrentCity(), i);
 		i++;
 		initialState.setCost(0.0);
 		Q.add(initialState);
-		// We store states in visitedStates
-		HashMap<Integer, Double> visitedStatesHashMap = new HashMap<Integer, Double>();
-		List<State> visitedStates = new ArrayList<State>();
-
-		HashMap<Integer, State> parentState = new HashMap<Integer, State>();
-		HashMap<Integer, Action> previousAction = new HashMap<Integer, Action>();
-
+		
 		State headState = initialState;
 		List<State> successors;
 		while (!Q.isEmpty()) {
@@ -262,13 +216,11 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 				for (Task task : headState.getCurrentTasks()) {
 					TaskSet currentTasks = headState.getCurrentTasks().clone();
 					currentTasks.remove(task);
+
 					State newState = new State(currentTasks, headState.getAvailableTasks(), task.deliveryCity, i);
-					
 					newState.setCost(headState.getCost() + headState.getCurrentCity().distanceTo(task.deliveryCity));
-					//newState.setCost(headState.getCurrentCity().distanceTo(task.deliveryCity));
-					newState.setHeuristic(computeHeuristic(headState, newState, costPerKm));
+					newState.setHeuristic(computeHeuristic(newState, costPerKm));
 					successors.add(newState);
-					
 					parentState.put(i, headState);
 					previousAction.put(i, new Delivery(task));
 					i++;
@@ -276,23 +228,17 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 
 				for (Task task : headState.getAvailableTasks()) {
 					if (task.weight < (vehicle.capacity() - headState.getCurrentTasks().weightSum())) {
-						
 						TaskSet availableTasks = headState.getAvailableTasks().clone();
 						availableTasks.remove(task);
-						
 						TaskSet currentTasks = headState.getCurrentTasks().clone();
 						currentTasks.add(task);
 						
 						State newState = new State(currentTasks, availableTasks, task.pickupCity, i);
-						
-					newState.setCost(headState.getCost() + headState.getCurrentCity().distanceTo(task.pickupCity));
-						//newState.setCost(headState.getCurrentCity().distanceTo(task.pickupCity));
-						newState.setHeuristic(computeHeuristic(headState, newState, costPerKm));
+						newState.setCost(headState.getCost() + headState.getCurrentCity().distanceTo(task.pickupCity));
+						newState.setHeuristic(computeHeuristic(newState, costPerKm));
 						successors.add(newState);
-						
 						parentState.put(i, headState);
 						previousAction.put(i, new Pickup(task));
-						
 						i++;
 					}
 				}
@@ -300,46 +246,36 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 				Q.addAll(successors);
 			}
 		}
-		ArrayList<Action> finalActions = new ArrayList<Action>();
-		ArrayList<City> citiesPath = new ArrayList<Topology.City>();
-		
-		ArrayList<Action> pathActions = new ArrayList<Action>();
+
 
 		City oldCity = current;
-
 		while(parentState.containsKey(headState.getId()) ){
 			Action action = previousAction.get(headState.getId());
 			finalActions.add(action);
-			citiesPath.add(headState.getCurrentCity());
+			finalCitiesPath.add(headState.getCurrentCity());
 			headState = parentState.get(headState.getId());	
 	
 		}
 		for (int j = finalActions.size()-1; j >= 0; j--) {
 			Action action = finalActions.get(j);
-			for (City city : oldCity.pathTo(citiesPath.get(j))) {
+			for (City city : oldCity.pathTo(finalCitiesPath.get(j))) {
 				plan.appendMove(city);
 			}
-			oldCity = citiesPath.get(j);
+			oldCity = finalCitiesPath.get(j);
 			plan.append(action);
 			System.out.println(action);
 		}
-		System.out.println("total distance astar "+plan.totalDistance());
-		Double totalTime = (System.nanoTime() - startTime)/1000000000.0 ;
-		
-		System.out.println(totalTime+ " seconds have passed for A*");
-		return plan;
+		return getPlan(vehicle, finalActions, finalCitiesPath);
 
 	}
 
-	private double computeHeuristic(State headState, State newState, int costPerKm) {
-		// TODO Auto-generated method stub
+	private double computeHeuristic(State newState, int costPerKm) { 
+		// Method computing our heuristic which is the  tight highest cost of all the remaining tasks
 		Double heuristic;
 		Double mini = Double.MAX_VALUE;
 		Double maxi = 0.0;
-		//int i = 0;
 		City currentCity = newState.getCurrentCity();
 		for (Task task : newState.getCurrentTasks()) {
-			//heuristic += currentCity.distanceTo(task.deliveryCity);
 			Double dist = currentCity.distanceTo(task.deliveryCity);
 			if (mini > dist){
 				mini = dist;
@@ -347,109 +283,40 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 			if (maxi < dist){
 				maxi = dist;
 			}
-			//currentCity = task.deliveryCity;
-			//i++;
 		}
 		for (Task task : newState.getAvailableTasks()) {
-			//heuristic += currentCity.distanceTo(task.pickupCity);
-			//currentCity = task.pickupCity;
-			//heuristic += currentCity.distanceTo(task.deliveryCity);
-			//currentCity = task.deliveryCity;
-		/*	Double dist = currentCity.distanceTo(task.pickupCity);
-			if (mini > dist){
-				mini = dist;
-			}
-			if (maxi < dist){
-				maxi = dist;
-			}
-		*/	
 			Double dist = task.pickupCity.distanceTo(task.deliveryCity);
-			if (mini > dist){
-				mini = dist;
-			}
 			if (maxi < dist){
 				maxi = dist;
-			}			//i++;
+			}			
 		}
-		//return 0;
-		if (mini== Double.MAX_VALUE){
-			System.out.println("max");
-			mini = 0.0;
-		}
-		heuristic = (mini + maxi)/2;
 		return maxi*costPerKm;		
-		//return headState.getCurrentCity().distanceTo(newState.getCurrentCity()) * costPerKm + heuristic*costPerKm;
-	}
-
-	private double computeHeuristic2(State headState, State newState, int costPerKm) {
-		// TODO Auto-generated method stub
-		Double heuristic = 0.0;
-		City currentCity = newState.getCurrentCity();
-		for (Task task : newState.getCurrentTasks()) {
-			heuristic -= task.reward;
-			currentCity = task.deliveryCity;
-		}
-		for (Task task : newState.getAvailableTasks()) {
-			heuristic -= task.reward;
-			currentCity = task.deliveryCity;
-		}
-		//System.out.println(heuristic);
-		//heuristic = newState.getCurrentCity().distanceTo(currentCity)*costPerKm;
-		return heuristic;
-		//return headState.getCurrentCity().distanceTo(newState.getCurrentCity()) * costPerKm + heuristic;
-	}
-//old
-	private double getCost7(State headState, State newState, int costPerKm) {
-		// TODO Auto-generated method stub
-		Double heuristic = 0.0;
-		int i = 0;
-		City currentCity = newState.getCurrentCity();
-		for (Task task : newState.getCurrentTasks()) {
-			heuristic += currentCity.distanceTo(task.deliveryCity);
-			currentCity = task.deliveryCity;
-			i++;
-		}
-		for (Task task : newState.getAvailableTasks()) {
-			heuristic += currentCity.distanceTo(task.pickupCity);
-			currentCity = task.pickupCity;
-			heuristic += currentCity.distanceTo(task.deliveryCity);
-			currentCity = task.deliveryCity;
-			i++;
-		}
-		
-		//heuristic/= i;
-		//System.out.println(heuristic);
-		//heuristic = newState.getCurrentCity().distanceTo(currentCity)*costPerKm;
-		return headState.getCurrentCity().distanceTo(newState.getCurrentCity()) * costPerKm + heuristic*costPerKm;
 	}
 
 	private boolean isFinalState(State state) {
 		return state.getAvailableTasks().isEmpty() && state.getCurrentTasks().isEmpty();
 	}
 
-	private int cost(State state) {
-		return 0;
+	public boolean stateEqualsState(State state, State currentState) {
+	if(state.getAvailableTasks().equals(currentState.getAvailableTasks()) &&
+			state.getCurrentCity().equals(currentState.getCurrentCity()) &&
+			state.getCurrentTasks().equals(currentState.getCurrentTasks()) &&
+			(state.getCost() + state.getHeuristic() < currentState.getCost() + currentState.getHeuristic())){
+				return true;
+	}
+	return false;
 	}
 
-	private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {
-		City current = vehicle.getCurrentCity();
-		Plan plan = new Plan(current);
-
-		for (Task task : tasks) {
-			// move: current city => pickup location
-			for (City city : current.pathTo(task.pickupCity))
+	public Plan getPlan(Vehicle vehicle, ArrayList<Action> bestPath, ArrayList<City> finalCitiesPath){
+		City oldCity = vehicle.getCurrentCity();
+		plan = new Plan(oldCity);
+		for (int j=0; j<bestPath.size(); j++) {
+			Action action = bestPath.get(j);
+			for (City city : oldCity.pathTo(finalCitiesPath.get(j))) {
 				plan.appendMove(city);
-
-			plan.appendPickup(task);
-
-			// move: pickup location => delivery location
-			for (City city : task.path())
-				plan.appendMove(city);
-
-			plan.appendDelivery(task);
-
-			// set current city
-			current = task.deliveryCity;
+			}
+			oldCity = finalCitiesPath.get(j);
+			plan.append(action);
 		}
 		return plan;
 	}
