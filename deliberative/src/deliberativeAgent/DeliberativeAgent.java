@@ -206,7 +206,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 	private boolean visitedAndHigherCost(List<State> visited, State currentState) {
 		for (State state : visited) {
 			if (stateEqualsState(state, currentState)) {
-				if (state.getCost() > currentState.getCost()) {
+				if (state.getCost()  > currentState.getCost()) {
 					return true;
 				}
 			}
@@ -250,7 +250,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 			if (isFinalState(headState)) {
 				break;
 			}
-			if (!visitedState(visitedStates, headState) ||  visitedAndHigherCost(visitedStates, headState)) {	
+			if (!visitedState(visitedStates, headState)) {	
 				visitedStates.add(headState);
 				
 				for (Task task : headState.getCurrentTasks()) {
@@ -259,7 +259,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 					State newState = new State(currentTasks, headState.getAvailableTasks(), task.deliveryCity, i);
 					
 					
-					newState.setCost(headState.getCost());
+					newState.setCost(headState.getCurrentCity().distanceTo(task.deliveryCity));
 					newState.setHeuristic(computeHeuristic(headState, newState, costPerKm));
 					successors.add(newState);
 					
@@ -279,7 +279,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 						
 						State newState = new State(currentTasks, availableTasks, task.pickupCity, i);
 						
-						newState.setCost(headState.getCost());
+						newState.setCost(headState.getCurrentCity().distanceTo(task.pickupCity));
 						newState.setHeuristic(computeHeuristic(headState, newState, costPerKm));
 						successors.add(newState);
 						
