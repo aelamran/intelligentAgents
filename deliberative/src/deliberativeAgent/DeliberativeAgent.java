@@ -286,12 +286,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 						i++;
 					}
 				}
-				successors.sort(new Comparator<State>() {
-					@Override
-					public int compare(State state1, State state2) {
-						return Double.compare(state1.getCost(), state2.getCost());
-					}
-				});
+
 				Q.addAll(successors);
 			}
 		}
