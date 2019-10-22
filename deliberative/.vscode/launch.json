@@ -9,7 +9,7 @@
             "name": "Debug (Launch) - Current File",
             "request": "launch",
             "mainClass": "logist.LogistPlatform",
-            "args":"config/deliberative.xml deliberative-bfs"
+            "args":"config/deliberative.xml deliberative-astar deliberative-astar deliberative-astar deliberative-astar"
         }
     ]
 }
