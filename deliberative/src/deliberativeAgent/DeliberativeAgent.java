@@ -60,15 +60,6 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 		// ...
 	}
 	
-	public boolean visitedState(Collection<State> visited, State currentState){	
-		for(State state:visited) {		
-				if (stateEqualsState(state, currentState)) {
-					return true;
-				}
-		}
-		return false;	
-	}
-	
 	
 	@Override
 	public Plan plan(Vehicle vehicle, TaskSet tasks) {
@@ -165,7 +156,6 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 				if(isFinalState(state)) {
 					queue.add(state);
 				}
-				//if(!(isFinalState(state)) && !visitedState.contains(state)) {
 				if(!(isFinalState(state)) && !visitedState(visitedState, state)) {
 					
 					visitedState.add(state);
@@ -306,10 +296,18 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 	}
 	return false;
 	}
+	public boolean visitedState(Collection<State> visited, State currentState){	
+		for(State state:visited) {		
+				if (stateEqualsState(state, currentState)) {
+					return true;
+				}
+		}
+		return false;	
+	}
 
 	public Plan getPlan(Vehicle vehicle, ArrayList<Action> bestPath, ArrayList<City> finalCitiesPath){
 		City oldCity = vehicle.getCurrentCity();
-		plan = new Plan(oldCity);
+		Plan plan = new Plan(oldCity);
 		for (int j=0; j<bestPath.size(); j++) {
 			Action action = bestPath.get(j);
 			for (City city : oldCity.pathTo(finalCitiesPath.get(j))) {
