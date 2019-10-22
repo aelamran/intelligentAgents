@@ -1,4 +1,5 @@
 package deliberativeAgent;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -7,6 +8,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 import java.util.HashSet;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 
 import logist.agent.Agent;
@@ -163,6 +165,7 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 				}
 			}
 		}		
+
 		return getPlan(vehicle, finalActions, bestCitiesPath);
 	}
 
@@ -255,8 +258,8 @@ public class DeliberativeAgent implements DeliberativeBehavior {
 			plan.append(action);
 			System.out.println(action);
 		}
-		return getPlan(vehicle, finalActions, finalCitiesPath);
-
+		return plan;
+		
 	}
 
 	private double computeHeuristic(State newState, int costPerKm) { 

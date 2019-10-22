@@ -78,4 +78,25 @@ public class State {
 	public void setHeuristic(double heuristic) {
 		this.heuristic = heuristic;
 	}	
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(currentTasks, currentCity, availableTasks, cost, heuristic);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		State other = (State) obj;
+		return Objects.equals(currentTasks, other.currentTasks) 
+				&& Objects.equals(currentCity, other.currentCity)
+				&& Objects.equals(availableTasks, other.availableTasks)
+				// "==" gives best result in A*, but is it correct ?
+				&& this.cost + this.getHeuristic() >= other.cost + other.getHeuristic();
+	}
 }
