@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
+
+import java.util.Iterator;
 import logist.LogistSettings;
 
 import logist.Measures;
@@ -93,11 +95,15 @@ public class CentralizedMain implements CentralizedBehavior {
                                                                                                                         // numberVehicles);
         ArrayList<Integer> times = new ArrayList<Integer>(Arrays.asList(new Integer[2 * numberTasks ]));//new ArrayList<Integer>(2*numberTasks);
         ArrayList<Vehicle> vehicles = new ArrayList<Vehicle>(Arrays.asList(new Vehicle[numberTasks]));
-        int t = 1;
+        int t = 0;
         int timeAction = 1;
         Integer lastActionId = null;
         /*  Go through all tasks and add them to the vehicle that has the space for them*/
-        for (Task task : tasks){
+//        for (Task task : tasks){
+        Iterator<Task> iterator =  tasks.iterator();
+        Task task = iterator.next();
+
+        while (t < numberTasks){
             int v = 0;
             while (v< numberVehicles){
                 Vehicle vehicle = myVehicles.get(v);
@@ -111,21 +117,21 @@ public class CentralizedMain implements CentralizedBehavior {
                 if (vehicle.capacity() - carried >= task.weight){
                     if (!currentTasksOfVehicles.containsKey(vehicle.id())){
                         nextActions.set(2*numberTasks + v, new Action.Pickup(task));
-                        nextActions.set(t-1, new Action.Delivery(task));
-                        lastActionId = numberTasks+t-1;
+                        nextActions.set(t, new Action.Delivery(task));
+                        lastActionId = numberTasks + t ;
                     }
                     else{
                         
                         nextActions.set(lastActionId, new Action.Pickup(task));
-                        lastActionId = t-1;
+                        lastActionId = t;
                         nextActions.set(lastActionId, new Action.Delivery(task));
-                        lastActionId = numberTasks + t-1;
+                        lastActionId = numberTasks + t;
                     }
                     
-                    vehicles.set(t-1, vehicle);
+                    vehicles.set(t, vehicle);
                     
-                    times.set(t-1, timeAction);
-                    times.set(numberTasks+t-1, timeAction+1);
+                    times.set(t, timeAction);
+                    times.set(numberTasks+t, timeAction+1);
                     timeAction += 2;
 
                     //vehicle.getCurrentTasks().add(task);  
@@ -141,11 +147,19 @@ public class CentralizedMain implements CentralizedBehavior {
                         currentTasks.add(task);
                         currentTasksOfVehicles.put(vehicle.id(), currentTasks);
                     }
-                    break;
+                    //break;
+                    task = iterator.next();
+                    t++;
                 }
-                v ++;
+                else{
+                    continue;
+                }
+                v++;
+                if (v >= numberVehicles){
+                    v = 0;
+                }
             }
-            t++;
+            //t++;
         }
         return new Solution(nextActions, times, vehicles, numberTasks, numberVehicles);
     }
