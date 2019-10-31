@@ -9,9 +9,6 @@
 		<set class-name="centralized.CentralizedMain"/>
 	</agent>
 	
-		<agent name="centralized-random">
-		<set class-path="bin/"/>
-		<set class-name="template.CentralizedTemplate"/>
-	</agent>
+
 	
 </agents>
