@@ -74,6 +74,7 @@ public class CentralizedMain implements CentralizedBehavior {
                                                                                                                         // numberVehicles);
         ArrayList<Integer> times = new ArrayList<Integer>(Arrays.asList(new Integer[2 * numberTasks ]));//new ArrayList<Integer>(2*numberTasks);
         ArrayList<Vehicle> vehicles = new ArrayList<Vehicle>(Arrays.asList(new Vehicle[2 * numberTasks]));
+        ArrayList<City> cities = new ArrayList<City>(Arrays.asList(new City[2 * numberTasks]));
         int t = 0;
         int timeAction = 1;
         Integer lastActionId = null;
@@ -98,6 +99,9 @@ public class CentralizedMain implements CentralizedBehavior {
                         nextActions.set(2*numberTasks + v, new Action.Pickup(task));
                     	nextActions.set(t, new Action.Delivery(task));
                         lastActionId = numberTasks + t ;
+                        cities.set(t, task.deliveryCity);
+                        cities.set(lastActionId, task.pickupCity);
+
                     }
                     else{
                         
@@ -105,9 +109,12 @@ public class CentralizedMain implements CentralizedBehavior {
                         lastActionId = t;
                         nextActions.set(lastActionId, new Action.Delivery(task));
                         lastActionId = numberTasks + t;
+                        cities.set(t, task.deliveryCity);
+                        cities.set(lastActionId, task.pickupCity);
                     }
                     
                     vehicles.set(t, vehicle);
+                    
                     
                     times.set(t, timeAction);
                     times.set(numberTasks+t, timeAction+1);
@@ -145,10 +152,47 @@ public class CentralizedMain implements CentralizedBehavior {
             
             //t++;
         }while(v<numberVehicles);
-        return new Solution(nextActions, times, vehicles, numberTasks, numberVehicles);
+        return new Solution(nextActions, times, vehicles, numberTasks, numberVehicles, cities);
     }
 
-    //private transformSolutionToPlan()
+    //public or private for the following method ? // TODO
+    public Plan transformSolutionToPlan(Solution sol){
+        //ArrayList<Action> nextActionsFinal = sol.nextActions
+        City oldCity = sol.vehicles.get(sol.numberTasks).getCurrentCity();
+        Plan plan = new Plan(oldCity);
+        ArrayList<Action> nextActions = sol.nextActions;
+        for(int i=0; i<sol.numberVehicles; i++){
+            //Vehicle tmp_vehicle = sol.vehicles.get(sol.numberTasks);
+            //if(iterator.hasNext())
+            Action currentAction = sol.nextActions.get(sol.numberTasks + i);
+            for (City city : oldCity.pathTo(currentAction.)) {
+				plan.appendMove(city);
+			}
+            plan.appendMove(city);;
+            int nextTime = sol.numberTasks + i;
+            while(nextActions.get(nextTime) != null){
+                nextTime = sol.times.get(nextTime);
+                Action nextnextAction = sol.nextActions.get(nextTime);
+            }
+
+            
+        }
+        
+        //sol.nextActions.get(sol.numberTasks)
+        /*Plan plan = new Plan(first_vehicle.getCurrentCity());
+        for(Vehicle car:sol.nextActions){
+
+
+
+        }*/
+
+
+
+
+
+
+        return plan
+    }
     
     @Override
     /*public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
