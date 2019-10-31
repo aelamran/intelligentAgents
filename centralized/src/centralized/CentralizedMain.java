@@ -5,6 +5,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 
@@ -99,8 +100,8 @@ public class CentralizedMain implements CentralizedBehavior {
                         nextActions.set(2*numberTasks + v, new Action.Pickup(task));
                     	nextActions.set(t, new Action.Delivery(task));
                         lastActionId = numberTasks + t ;
-                        cities.set(t, task.deliveryCity);
-                        cities.set(lastActionId, task.pickupCity);
+                        cities.set(t, task.pickupCity);
+                        cities.set(lastActionId, task.deliveryCity);
 
                     }
                     else{
@@ -109,8 +110,8 @@ public class CentralizedMain implements CentralizedBehavior {
                         lastActionId = t;
                         nextActions.set(lastActionId, new Action.Delivery(task));
                         lastActionId = numberTasks + t;
-                        cities.set(t, task.deliveryCity);
-                        cities.set(lastActionId, task.pickupCity);
+                        cities.set(t, task.pickupCity);
+                        cities.set(lastActionId, task.deliveryCity);
                     }
                     
                     vehicles.set(t, vehicle);
@@ -156,19 +157,37 @@ public class CentralizedMain implements CentralizedBehavior {
     }
 
     //public or private for the following method ? // TODO
-    public Plan transformSolutionToPlan(Solution sol){
+    public List<Plan> transformSolutionToPlans(List<Vehicle> myVehicles, Solution sol){
         //ArrayList<Action> nextActionsFinal = sol.nextActions
-        City oldCity = sol.vehicles.get(sol.numberTasks).getCurrentCity();
-        Plan plan = new Plan(oldCity);
+        List<Plan> plans = new ArrayList<Plan>();
+        /*int j = 0;
+        int taskId = 0;
+        for(int i=0; i<sol.numberVehicles; i++){
+            City oldCity = myVehicles.get(i).homeCity();
+            Plan plan = new Plan(oldCity);
+            ArrayList<Action> nextActions = sol.getNextActions();
+            taskId = nextActions.get(2 * sol.numberTasks + i).task.id;
+            while(nextActions.get(j) != null){
+                City newCity = cities.get(j);
+                plan.append(nextActions.get(j));
+            }
+        }*/
+        
         ArrayList<Action> nextActions = sol.nextActions;
         for(int i=0; i<sol.numberVehicles; i++){
-            //Vehicle tmp_vehicle = sol.vehicles.get(sol.numberTasks);
+            //City oldCity = sol.vehicles.get(sol.numberTasks).getCurrentCity();
+            // Get the city of the vehicle first
+            City oldCity = myVehicles.get(i).homeCity();
+        
+            // Create a plan for each vehicle
+            Plan plan = new Plan(oldCity);
+                //Vehicle tmp_vehicle = sol.vehicles.get(sol.numberTasks);
             //if(iterator.hasNext())
-            Action currentAction = sol.nextActions.get(sol.numberTasks + i);
+            Action currentAction = sol.nextActions.get(2 * sol.numberTasks + i);
             for (City city : oldCity.pathTo(currentAction.)) {
 				plan.appendMove(city);
 			}
-            plan.appendMove(city);;
+            plan.appendMove(city);
             int nextTime = sol.numberTasks + i;
             while(nextActions.get(nextTime) != null){
                 nextTime = sol.times.get(nextTime);
@@ -191,7 +210,7 @@ public class CentralizedMain implements CentralizedBehavior {
 
 
 
-        return plan
+        return plans;
     }
     
     @Override
@@ -215,19 +234,33 @@ public class CentralizedMain implements CentralizedBehavior {
         
         return plans;
     }*/
-    public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
+    public List<Plan> plan(List<Vehicle> myVehicles, TaskSet tasks) {
         long time_start = System.currentTimeMillis();
         
 //		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
-        Solution initialSolution = getInitialSolution(vehicles, tasks);
-        Plan planVehicle1 = naivePlan(vehicles.get(0), tasks);
+        Solution initialSolution = getInitialSolution(myVehicles, tasks);
 
-        List<Plan> plans = new ArrayList<Plan>();
-        plans.add(planVehicle1);
+        Solution currentSolution = (Solution) (initialSolution.clone());
+        // Implementing the algorithm
+        int i = 0;
+        final int MAX_ITERATIONS = 10000;
+        while(i < MAX_ITERATIONS){
+            Solution oldSolution = currentSolution.clone();
+            HashSet<Solution> neighbors = chooseNeighbors(oldSolution);
+            currentSolution = localChoice(oldSolution, neighbors);
+            i++;
+        }
+
+
+        //Plan planVehicle1 = naivePlan(vehicles.get(0), tasks);
+
+        List<Plan> plans = transformSolutionToPlans(myVehicles, currentSolution);
+//            new ArrayList<Plan>();
+        /*plans.add(planVehicle1);
         while (plans.size() < vehicles.size()) {
             plans.add(Plan.EMPTY);
         }
-        
+        */
         long time_end = System.currentTimeMillis();
         long duration = time_end - time_start;
         System.out.println("The plan was generated in " + duration + " milliseconds.");
