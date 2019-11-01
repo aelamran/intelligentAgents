@@ -197,13 +197,7 @@ public class CentralizedMain implements CentralizedBehavior {
             
         }
         
-        //sol.nextActions.get(sol.numberTasks)
-        /*Plan plan = new Plan(first_vehicle.getCurrentCity());
-        for(Vehicle car:sol.nextActions){
 
-
-
-        }*/
 
 
 
