@@ -1,0 +1,9 @@
+Learning algorithms IA:
+	
+
+	1) Agent's policy.
+	2) Bayesian update. (slide 6)
+	
+	Good resources for bandit problem: https://fr.wikipedia.org/wiki/Bandit_manchot_(math%C3%A9matiques)
+
+For the Q learning, we don't need the gamma to converge! The transition probabilities are enough 
