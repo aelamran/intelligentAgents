@@ -67,7 +67,7 @@ public class CentralizedMain implements CentralizedBehavior {
         Integer numberTasks = tasks.size();
         Integer numberVehicles = myVehicles.size();
 
-        HashMap<Integer, TaskSet> currentTasksOfVehicles = new HashMap();
+        HashMap<Integer, ArrayList<Task>> currentTasksOfVehicles = new HashMap<Integer,ArrayList<Task>>();
 
         ArrayList<Action> nextActions = new ArrayList<Action>(Arrays.asList(new Action[2 * numberTasks + numberVehicles]));// new
                                                                                                                         // ArrayList<Action>(2*numberTasks
@@ -88,13 +88,14 @@ public class CentralizedMain implements CentralizedBehavior {
         	do {
         		
                 Vehicle vehicle = myVehicles.get(v);
-                Integer carried ;
-                if (currentTasksOfVehicles.containsKey(vehicle.id()) ){
+                Integer carried = 0 ;
+                /*if (currentTasksOfVehicles.containsKey(vehicle.id()) ){
                     carried = currentTasksOfVehicles.get(vehicle.id()).weightSum();
                 }
                 else{
                     carried = 0;
-                }
+                }*/
+
                 if (vehicle.capacity() - carried >= task.weight){
                     if (!currentTasksOfVehicles.containsKey(vehicle.id())){
                         nextActions.set(2*numberTasks + v, new Action.Pickup(task));
@@ -105,8 +106,9 @@ public class CentralizedMain implements CentralizedBehavior {
 
                     }
                     else{
+                        int lastActionOfVehicle = currentTasksOfVehicles.get(v).get(currentTasksOfVehicles.size() -1).id;
                         
-                        nextActions.set(lastActionId, new Action.Pickup(task));
+                        nextActions.set(lastActionOfVehicle, new Action.Pickup(task));
                         lastActionId = t;
                         nextActions.set(lastActionId, new Action.Delivery(task));
                         lastActionId = numberTasks + t;
@@ -124,13 +126,13 @@ public class CentralizedMain implements CentralizedBehavior {
                     //vehicle.getCurrentTasks().add(task);  
                      
                     if (currentTasksOfVehicles.containsKey(vehicle.id()) ){
-                        TaskSet currentTasks = currentTasksOfVehicles.get(vehicle.id());
+                        ArrayList<Task> currentTasks = currentTasksOfVehicles.get(vehicle.id());
                         currentTasks.add(task);
                         currentTasksOfVehicles.put(vehicle.id(), currentTasks);
                     }
                     else
                     {
-                        TaskSet currentTasks = vehicle.getCurrentTasks();
+                        ArrayList<Task> currentTasks = new ArrayList<Task>(vehicle.getCurrentTasks());
                         currentTasks.add(task);
                         currentTasksOfVehicles.put(vehicle.id(), currentTasks);
                     }
