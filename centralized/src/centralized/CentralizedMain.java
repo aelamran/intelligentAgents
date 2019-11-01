@@ -66,25 +66,20 @@ public class CentralizedMain implements CentralizedBehavior {
     private Solution getInitialSolution(List<Vehicle> myVehicles, TaskSet tasks) {
         Integer numberTasks = tasks.size();
         Integer numberVehicles = myVehicles.size();
-
+        ArrayList<Integer> times = new ArrayList<Integer>(Arrays.asList(new Integer[2 * numberTasks ]));
         HashMap<Integer, TaskSet> currentTasksOfVehicles = new HashMap();
-
-        ArrayList<Action> nextActions = new ArrayList<Action>(Arrays.asList(new Action[2 * numberTasks + numberVehicles]));// new
-                                                                                                                        // ArrayList<Action>(2*numberTasks
-                                                                                                                        // +
-                                                                                                                        // numberVehicles);
-        ArrayList<Integer> times = new ArrayList<Integer>(Arrays.asList(new Integer[2 * numberTasks ]));//new ArrayList<Integer>(2*numberTasks);
+        HashMap<Integer, Integer> LastActionIdMap = new HashMap();
+        ArrayList<Integer> nextActions = new ArrayList<Integer>(Arrays.asList(new Integer[2 * numberTasks + numberVehicles]));
         ArrayList<Vehicle> vehicles = new ArrayList<Vehicle>(Arrays.asList(new Vehicle[2 * numberTasks]));
+                                                                                                                        
         ArrayList<City> cities = new ArrayList<City>(Arrays.asList(new City[2 * numberTasks]));
-        int t = 0;
         int timeAction = 1;
         Integer lastActionId = null;
         /*  Go through all tasks and add them to the vehicle that has the space for them*/
-//        for (Task task : tasks){
         Iterator<Task> iterator =  tasks.iterator();
         Task task = iterator.next();
         int v =0;
-
+        int t = 0;
         	do {
         		
                 Vehicle vehicle = myVehicles.get(v);
@@ -97,24 +92,34 @@ public class CentralizedMain implements CentralizedBehavior {
                 }
                 if (vehicle.capacity() - carried >= task.weight){
                     if (!currentTasksOfVehicles.containsKey(vehicle.id())){
-                        nextActions.set(2*numberTasks + v, new Action.Pickup(task));
-                    	nextActions.set(t, new Action.Delivery(task));
+                        //nextActions.set(2*numberTasks + v, new Action.Pickup(task));
+                        //nextActions.set(t, new Action.Delivery(task));
+                        
+                        nextActions.set(2*numberTasks +v, t);
+                        nextActions.set(numberTasks+t, null);
                         lastActionId = numberTasks + t ;
+                        LastActionIdMap.put(v, lastActionId);
                         cities.set(t, task.pickupCity);
-                        cities.set(lastActionId, task.deliveryCity);
-
+                        cities.set(numberTasks+t, task.deliveryCity);
                     }
                     else{
                         
-                        nextActions.set(lastActionId, new Action.Pickup(task));
-                        lastActionId = t;
-                        nextActions.set(lastActionId, new Action.Delivery(task));
-                        lastActionId = numberTasks + t;
+                        nextActions.set(LastActionIdMap.get(v), t);
+                        nextActions.set(numberTasks+t, null);
+                        lastActionId = numberTasks + t ;
+                        LastActionIdMap.put(v, lastActionId);
+                        //nextActions.set(lastActionId, new Action.Pickup(task));
+                        //lastActionId = t;
+                        //nextActions.set(lastActionId, new Action.Delivery(task));
+                        //lastActionId = numberTasks + t;
+
+                        //TODOOOO
                         cities.set(t, task.pickupCity);
-                        cities.set(lastActionId, task.deliveryCity);
+                        cities.set(LastActionIdMap.get(v), task.deliveryCity);
                     }
                     
                     vehicles.set(t, vehicle);
+                    
                     
                     
                     times.set(t, timeAction);
@@ -157,9 +162,9 @@ public class CentralizedMain implements CentralizedBehavior {
     }
 
     //public or private for the following method ? // TODO
-    public List<Plan> transformSolutionToPlans(List<Vehicle> myVehicles, Solution sol){
+    //public List<Plan> transformSolutionToPlans(List<Vehicle> myVehicles, Solution sol){
         //ArrayList<Action> nextActionsFinal = sol.nextActions
-        List<Plan> plans = new ArrayList<Plan>();
+        //List<Plan> plans = new ArrayList<Plan>();
         /*int j = 0;
         int taskId = 0;
         for(int i=0; i<sol.numberVehicles; i++){
@@ -173,17 +178,17 @@ public class CentralizedMain implements CentralizedBehavior {
             }
         }*/
         
-        ArrayList<Action> nextActions = sol.nextActions;
-        for(int i=0; i<sol.numberVehicles; i++){
+        //ArrayList<Integer> nextActions = sol.nextActions;
+        //for(int i=0; i<sol.numberVehicles; i++){
             //City oldCity = sol.vehicles.get(sol.numberTasks).getCurrentCity();
             // Get the city of the vehicle first
-            City oldCity = myVehicles.get(i).homeCity();
+          //  City oldCity = myVehicles.get(i).homeCity();
         
             // Create a plan for each vehicle
-            Plan plan = new Plan(oldCity);
+            //Plan plan = new Plan(oldCity);
                 //Vehicle tmp_vehicle = sol.vehicles.get(sol.numberTasks);
             //if(iterator.hasNext())
-            Action currentAction = sol.nextActions.get(2 * sol.numberTasks + i);
+            /*Action currentAction = sol.nextActions.get(2 * sol.numberTasks + i);
             for (City city : oldCity.pathTo(currentAction.)) {
 				plan.appendMove(city);
 			}
@@ -200,12 +205,12 @@ public class CentralizedMain implements CentralizedBehavior {
 
 
 
+*/
 
 
 
-
-        return plans;
-    }
+    //    return plans;
+  //  }
     
     @Override
     /*public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
@@ -228,38 +233,55 @@ public class CentralizedMain implements CentralizedBehavior {
         
         return plans;
     }*/
-    public List<Plan> plan(List<Vehicle> myVehicles, TaskSet tasks) {
-        long time_start = System.currentTimeMillis();
+    public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
+        //long time_start = System.currentTimeMillis();
         
 //		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
-        Solution initialSolution = getInitialSolution(myVehicles, tasks);
+        Solution initialSolution = getInitialSolution(vehicles, tasks);
 
-        Solution currentSolution = (Solution) (initialSolution.clone());
+        //Solution currentSolution = (Solution) (initialSolution.clone());
         // Implementing the algorithm
-        int i = 0;
-        final int MAX_ITERATIONS = 10000;
-        while(i < MAX_ITERATIONS){
+        //int i = 0;
+        //final int MAX_ITERATIONS = 10000;
+        /*while(i < MAX_ITERATIONS){
             Solution oldSolution = currentSolution.clone();
             HashSet<Solution> neighbors = chooseNeighbors(oldSolution);
             currentSolution = localChoice(oldSolution, neighbors);
             i++;
-        }
+        }*/
 
 
         //Plan planVehicle1 = naivePlan(vehicles.get(0), tasks);
 
-        List<Plan> plans = transformSolutionToPlans(myVehicles, currentSolution);
+        //List<Plan> plans = transformSolutionToPlans(myVehicles, currentSolution);
 //            new ArrayList<Plan>();
         /*plans.add(planVehicle1);
         while (plans.size() < vehicles.size()) {
             plans.add(Plan.EMPTY);
         }
         */
-        long time_end = System.currentTimeMillis();
+        /*long time_end = System.currentTimeMillis();
         long duration = time_end - time_start;
         System.out.println("The plan was generated in " + duration + " milliseconds.");
         
         return plans;
+    */
+            long time_start = System.currentTimeMillis();
+        
+    //		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
+            Plan planVehicle1 = naivePlan(vehicles.get(0), tasks);
+    
+            List<Plan> plans = new ArrayList<Plan>();
+            plans.add(planVehicle1);
+            while (plans.size() < vehicles.size()) {
+                plans.add(Plan.EMPTY);
+            }
+            
+            long time_end = System.currentTimeMillis();
+            long duration = time_end - time_start;
+            System.out.println("The plan was generated in " + duration + " milliseconds.");
+            
+            return plans;
     }
     
     private Plan naivePlan(Vehicle vehicle, TaskSet tasks) {

@@ -3,21 +3,20 @@ import logist.topology.Topology.City;
 import java.util.ArrayList;
 import java.util.List;
 
-import logist.plan.Action;
 import logist.simulation.Vehicle;
 
 /**
  * Class to represent a possible solution
  */
 public class Solution {
-    ArrayList<Action> nextActions;
+    ArrayList<Integer> nextActions;
     ArrayList<City> cities;
     ArrayList<Integer> times;
     List<Vehicle> vehicles;
     Integer numberTasks;
     Integer numberVehicles;
 
-    public Solution(ArrayList<Action> nextActions, ArrayList<Integer> times, List<Vehicle> vehicles,
+    public Solution(ArrayList<Integer> nextActions, ArrayList<Integer> times, List<Vehicle> vehicles,
             Integer numberTasks, Integer numberVehicles, ArrayList<City> cities) {
         this.nextActions = nextActions;
         this.times = times;
@@ -32,11 +31,11 @@ public class Solution {
         return sol;
     }
 
-    public ArrayList<Action> getNextActions() {
+    public ArrayList<Integer> getNextActions() {
         return nextActions;
     }
 
-    public void setNextActions(ArrayList<Action> nextActions) {
+    public void setNextActions(ArrayList<Integer> nextActions) {
         this.nextActions = nextActions;
     }
 
