@@ -2,6 +2,8 @@ package centralized;
 import logist.topology.Topology.City;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import logist.task.*;
 
 import logist.simulation.Vehicle;
 
@@ -10,15 +12,17 @@ import logist.simulation.Vehicle;
  */
 public class Solution {
     ArrayList<Integer> nextActions;
+    ArrayList<Map.Entry<Integer, Task>> nextActionsBis;
     ArrayList<City> cities;
     ArrayList<Integer> times;
     List<Vehicle> vehicles;
     Integer numberTasks;
     Integer numberVehicles;
 
-    public Solution(ArrayList<Integer> nextActions, ArrayList<Integer> times, List<Vehicle> vehicles,
+    public Solution(ArrayList<Integer> nextActions, ArrayList<Map.Entry<Integer, Task>> nextActionsBis, ArrayList<Integer> times, List<Vehicle> vehicles,
             Integer numberTasks, Integer numberVehicles, ArrayList<City> cities) {
         this.nextActions = nextActions;
+        this.nextActionsBis = nextActionsBis;
         this.times = times;
         this.vehicles = vehicles;
         this.numberTasks = numberTasks;
@@ -27,12 +31,16 @@ public class Solution {
     }
 
     public Solution clone(){
-        Solution sol = new Solution(nextActions, times, vehicles, numberTasks, numberVehicles, cities);
+        Solution sol = new Solution(nextActions, nextActionsBis, times, vehicles, numberTasks, numberVehicles, cities);
         return sol;
     }
 
     public ArrayList<Integer> getNextActions() {
         return nextActions;
+    }
+
+    public ArrayList<Map.Entry<Integer, Task>> getNextActionsBis() {
+        return nextActionsBis;
     }
 
     public void setNextActions(ArrayList<Integer> nextActions) {
