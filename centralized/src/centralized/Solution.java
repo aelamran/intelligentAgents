@@ -32,6 +32,58 @@ public class Solution {
         Solution sol = new Solution(nextActions, times, vehicles, numberTasks, numberVehicles, cities);
         return sol;
     }
+    
+    public boolean checkConstraints() {
+    	boolean isCorrect = true;
+    	for (int i=0; i<nextActions.size();i++) {
+    		Integer nextActionOfI = nextActions.get(i).getKey();
+    		if (nextActionOfI==null) {
+    			continue;
+    		}
+    		// Check that all entries are pickups or deliveries
+    		if (nextActionOfI!=null && nextActionOfI > 2*numberTasks) {
+    			return false;
+    		}
+    		
+    		// Check that times go one by one
+    		//System.out.println(nextActionOfI+" "+i);
+			if (i < times.size() && times.get(nextActionOfI) != times.get(i) +1 ) {
+				return false;
+			}
+			
+			// Check that nextAction of i is different than i
+			if (nextActionOfI == i) {
+				return false;
+			}
+			
+			// check that time of pickup is < than time of delivery
+			if (i < numberTasks) { // i is a pickup
+				if (times.get(i) >= times.get(i + numberTasks)) {
+					return false;
+				}
+				/*// check that pickup and delivery have the same vehicle
+				if (vehicles.get(i).id() != vehicles.get(i + numberTasks).id()) {
+					return false;
+				}*/
+				// TODO: check that load of task is smaller than cap of vehicle
+			}
+    		
+    	}
+    	
+    	for(int v=0; v<numberVehicles; v++) {
+    		Integer firstVehicleTask = nextActions.get(2*numberTasks+v).getKey();
+			// Check that all vehicles start with a pickup
+    		if (firstVehicleTask!=null && firstVehicleTask > numberTasks) {
+    			return false;
+    		}
+    		
+    		// Check that all vehicles start at 1
+    		if (times.get(firstVehicleTask) != 1) {
+    			return false;
+    		}
+    	}
+    	return isCorrect;
+    }
 
 
 
