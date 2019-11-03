@@ -235,7 +235,7 @@ public class CentralizedMain implements CentralizedBehavior {
             return "DELIVERY";
         }
     }
-    
+
     public ArrayList<Map.Entry<Integer, Task>> getActionsOfVehicle(Solution sol, int v){
 
         ArrayList<Map.Entry<Integer, Task>> actionsOfVehicle = new ArrayList<Map.Entry<Integer, Task>>();
@@ -255,6 +255,7 @@ public class CentralizedMain implements CentralizedBehavior {
         
     public HashSet<Solution> chooseNeighbors(List<Vehicle> myVehicles, TaskSet tasks, Solution oldSolution){
         HashSet<Solution> neighbors = new HashSet<Solution>();
+        Integer numberOftasks = oldSolution.getNumberTasks();
         Random r = new Random();
         // Choose a vehicle at random
         int v = 0;
@@ -268,7 +269,7 @@ public class CentralizedMain implements CentralizedBehavior {
         // Change vehicle
         for (int vi = 0; vi < oldSolution.numberVehicles; vi++){
             if (vi != v){
-                int t = nextActions.get(vi);
+                int t = nextActions.get(2*numberOftasks +vi);
                 
                 if (getTaskById(tasks, t).weight <= vehicle.capacity() ){
                     Solution newSol = changeVehicle(oldSolution, tasks, myVehicles, v, vi, t);
@@ -354,7 +355,7 @@ public class CentralizedMain implements CentralizedBehavior {
                     Task actionOccuringBeforeDelivery = oldActions.get(actionOccuringBeforeDeliveryId).getValue();
                     nextActionToModify = oldActions.get(nextActionToModify).getKey();
                     newActions.set(actionOccuringBeforeDeliveryId, new SimpleEntry<Integer, Task> (nextActionToModify, actionOccuringBeforeDelivery));
-                    if(actionOccuringBeforeDeliveryId>=numberTasks && actionOccuringBeforeDeliveryId< 2*numberTasks){
+                    if(natureOfTask(actionOccuringBeforeDeliveryId, numberTasks).equals("DELIVERY")){
                         newCities.set(actionOccuringBeforeDeliveryId, actionOccuringBeforeDelivery.deliveryCity); 
                     }
                     else{
