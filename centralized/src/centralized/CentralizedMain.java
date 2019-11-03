@@ -226,6 +226,23 @@ public class CentralizedMain implements CentralizedBehavior {
         }
         return plans;              
     }
+
+    public ArrayList<Map.Entry<Integer, Task>> getActionsOfVehicle(Solution sol, int v){
+
+        ArrayList<Map.Entry<Integer, Task>> actionsOfVehicle = new ArrayList<Map.Entry<Integer, Task>>();
+        ArrayList<Map.Entry<Integer, Task>> nextActions = sol.getNextActionsBis();
+        int numberTasks = sol.getNumberTasks();
+
+        Map.Entry<Integer, Task> currentActionMap = nextActions.get(2*numberTasks + v);
+        Integer idCurrentAction = currentActionMap.getKey();
+        actionsOfVehicle.add(currentActionMap);
+        while(!nextActions.get(idCurrentAction).getKey().equals(null)){
+            currentActionMap = nextActions.get(idCurrentAction);
+            idCurrentAction = currentActionMap.getKey();
+            actionsOfVehicle.add(currentActionMap);
+        }
+        return actionsOfVehicle;
+    }
         
     public HashSet<Solution> chooseNeighbors(List<Vehicle> myVehicles, TaskSet tasks, Solution oldSolution){
         HashSet<Solution> neighbors = new HashSet<Solution>();
