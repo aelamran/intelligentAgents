@@ -227,6 +227,15 @@ public class CentralizedMain implements CentralizedBehavior {
         return plans;              
     }
 
+    public String natureOfTask(Integer t, int numberTasks){
+        if (0<=t && t<numberTasks){
+            return "PICKUP";
+        }
+        else{
+            return "DELIVERY";
+        }
+    }
+    
     public ArrayList<Map.Entry<Integer, Task>> getActionsOfVehicle(Solution sol, int v){
 
         ArrayList<Map.Entry<Integer, Task>> actionsOfVehicle = new ArrayList<Map.Entry<Integer, Task>>();
