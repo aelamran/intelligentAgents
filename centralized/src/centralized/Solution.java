@@ -11,18 +11,16 @@ import logist.simulation.Vehicle;
  * Class to represent a possible solution
  */
 public class Solution {
-    ArrayList<Integer> nextActions;
-    ArrayList<Map.Entry<Integer, Task>> nextActionsBis;
+    ArrayList<Map.Entry<Integer, Task>> nextActions;
     ArrayList<City> cities;
     ArrayList<Integer> times;
     List<Vehicle> vehicles;
     Integer numberTasks;
     Integer numberVehicles;
 
-    public Solution(ArrayList<Integer> nextActions, ArrayList<Map.Entry<Integer, Task>> nextActionsBis, ArrayList<Integer> times, List<Vehicle> vehicles,
+    public Solution(ArrayList<Map.Entry<Integer, Task>> nextActions, ArrayList<Integer> times, List<Vehicle> vehicles,
             Integer numberTasks, Integer numberVehicles, ArrayList<City> cities) {
         this.nextActions = nextActions;
-        this.nextActionsBis = nextActionsBis;
         this.times = times;
         this.vehicles = vehicles;
         this.numberTasks = numberTasks;
@@ -31,20 +29,14 @@ public class Solution {
     }
 
     public Solution clone(){
-        Solution sol = new Solution(nextActions, nextActionsBis, times, vehicles, numberTasks, numberVehicles, cities);
+        Solution sol = new Solution(nextActions, times, vehicles, numberTasks, numberVehicles, cities);
         return sol;
     }
 
-    public ArrayList<Integer> getNextActions() {
+
+
+    public ArrayList<Map.Entry<Integer, Task>> getNextActions() {
         return nextActions;
-    }
-
-    public ArrayList<Map.Entry<Integer, Task>> getNextActionsBis() {
-        return nextActionsBis;
-    }
-
-    public void setNextActions(ArrayList<Integer> nextActions) {
-        this.nextActions = nextActions;
     }
 
     public ArrayList<City> getCities() {
