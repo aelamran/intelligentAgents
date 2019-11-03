@@ -75,8 +75,7 @@ public class CentralizedMain implements CentralizedBehavior {
         ArrayList<Integer> times = new ArrayList<Integer>(Arrays.asList(new Integer[2 * numberTasks ]));
 
         HashMap<Integer, Integer> LastActionIdMap = new HashMap<Integer,Integer>();
-        ArrayList<Integer> nextActions = new ArrayList<Integer>(Arrays.asList(new Integer[2 * numberTasks + numberVehicles]));
-        ArrayList<Map.Entry<Integer, Task>> nextActionsBis = new ArrayList<Map.Entry<Integer, Task>>(2 * numberTasks + numberVehicles);
+        ArrayList<Map.Entry<Integer, Task>> nextActions = new ArrayList<Map.Entry<Integer, Task>>(2 * numberTasks + numberVehicles);
         ArrayList<Vehicle> vehicles = new ArrayList<Vehicle>(Arrays.asList(new Vehicle[2 * numberTasks]));
                                                                                                                         
         ArrayList<City> cities = new ArrayList<City>(Arrays.asList(new City[2 * numberTasks]));
@@ -95,13 +94,11 @@ public class CentralizedMain implements CentralizedBehavior {
                     if (!currentTasksOfVehicles.containsKey(vehicle.id())){
                         
                         // Set the vehicle, pickup, and delivery
-                        nextActions.set(2*numberTasks +v, t);
-                        nextActions.set(t, numberTasks + t);
-                        nextActions.set(numberTasks+t, null);
 
-                        nextActionsBis.set(2*numberTasks +v, new SimpleEntry<Integer, Task> (t, task));
-                        nextActionsBis.set(t,new SimpleEntry<Integer, Task> (numberTasks+t, task));
-                        nextActionsBis.set(numberTasks+t,new SimpleEntry<Integer, Task> (null, task));
+
+                        nextActions.set(2*numberTasks +v, new SimpleEntry<Integer, Task> (t, task));
+                        nextActions.set(t,new SimpleEntry<Integer, Task> (numberTasks+t, task));
+                        nextActions.set(numberTasks+t,new SimpleEntry<Integer, Task> (null, task));
 
 
 
@@ -116,13 +113,11 @@ public class CentralizedMain implements CentralizedBehavior {
                         
                         // Set the last action, pickup, and delivery
 
-                        nextActions.set(lastActionOfVehicle, t);
-                        nextActions.set(t, numberTasks+t);
-                        nextActions.set(numberTasks+t, null);
 
-                        nextActionsBis.set(lastActionOfVehicle, new SimpleEntry<Integer, Task> (t, task));
-                        nextActionsBis.set(t,new SimpleEntry<Integer, Task> (numberTasks+t, task));
-                        nextActionsBis.set(numberTasks+t,new SimpleEntry<Integer, Task> (null, task));
+
+                        nextActions.set(lastActionOfVehicle, new SimpleEntry<Integer, Task> (t, task));
+                        nextActions.set(t,new SimpleEntry<Integer, Task> (numberTasks+t, task));
+                        nextActions.set(numberTasks+t,new SimpleEntry<Integer, Task> (null, task));
 
                         lastActionId = numberTasks + t ;
                         LastActionIdMap.put(v, lastActionId);
@@ -172,7 +167,7 @@ public class CentralizedMain implements CentralizedBehavior {
             
             //t++;
         }while(v<numberVehicles);
-        return new Solution(nextActions, nextActionsBis, times, vehicles, numberTasks, numberVehicles, cities);
+        return new Solution(nextActions, times, vehicles, numberTasks, numberVehicles, cities);
     }
 
     public Task getTaskById(TaskSet tasks, int id){
@@ -191,14 +186,13 @@ public class CentralizedMain implements CentralizedBehavior {
         for(int i=0; i<sol.numberVehicles; i++){
             City oldCity = myVehicles.get(i).homeCity();
             Plan plan = new Plan(oldCity);
-            ArrayList<Integer> nextActions = sol.getNextActions();
-            ArrayList<Map.Entry<Integer, Task>> nextActionsBis = sol.getNextActionsBis();
+            ArrayList<Map.Entry<Integer, Task>> nextActions = sol.getNextActions();
 
             
             // Get the action id
             actionId = 2 * sol.numberTasks + i ;
             while(nextActions.get(actionId) != null){
-                actionId = nextActionsBis.get(actionId).getKey();
+                actionId = nextActions.get(actionId).getKey();
                 //actionId = nextActions.get(actionId);
                 City newCity = cities.get(actionId);
                 //CityTaskId.get()
@@ -209,12 +203,12 @@ public class CentralizedMain implements CentralizedBehavior {
                 }
 
                 if (actionId < sol.getNumberTasks()){
-                    plan.appendPickup(nextActionsBis.get(actionId).getValue());
+                    plan.appendPickup(nextActions.get(actionId).getValue());
                     //plan.appendPickup()
                 }
                 else if (actionId < 2 * sol.getNumberTasks()){
                     //plan.appendDelivery(getTaskById(tasks, actionId - sol.getNumberTasks()));
-                    plan.appendDelivery(nextActionsBis.get(actionId- sol.getNumberTasks()).getValue());
+                    plan.appendDelivery(nextActions.get(actionId- sol.getNumberTasks()).getValue());
                 }
                 else{
                     System.out.println("Error on index ");
@@ -239,7 +233,7 @@ public class CentralizedMain implements CentralizedBehavior {
     public ArrayList<Map.Entry<Integer, Task>> getActionsOfVehicle(Solution sol, int v){
 
         ArrayList<Map.Entry<Integer, Task>> actionsOfVehicle = new ArrayList<Map.Entry<Integer, Task>>();
-        ArrayList<Map.Entry<Integer, Task>> nextActions = sol.getNextActionsBis();
+        ArrayList<Map.Entry<Integer, Task>> nextActions = sol.getNextActions();
         int numberTasks = sol.getNumberTasks();
 
         Map.Entry<Integer, Task> currentActionMap = nextActions.get(2*numberTasks + v);
@@ -259,7 +253,7 @@ public class CentralizedMain implements CentralizedBehavior {
         Random r = new Random();
         // Choose a vehicle at random
         int v = 0;
-        ArrayList<Integer> nextActions = oldSolution.getNextActions();
+        ArrayList<Map.Entry<Integer, Task>> nextActions = oldSolution.getNextActions();
 
         do{
             v =  r.ints(0, (oldSolution.numberVehicles + 1)).findFirst().getAsInt();
@@ -270,7 +264,7 @@ public class CentralizedMain implements CentralizedBehavior {
         for (int vi = 0; vi < oldSolution.numberVehicles; vi++){
             if (vi != v){
                 ArrayList<Map.Entry<Integer, Task>> myActions = getActionsOfVehicle(oldSolution, v);
-                int pickupPosition = nextActions.get(2*numberOftasks +vi);
+                int pickupPosition = nextActions.get(2*numberOftasks +vi).getKey();
                 Map.Entry<Integer, Task> mapMyActions = myActions.get(pickupPosition);
                 if (myActions.get(pickupPosition).getValue().weight <= vehicle.capacity() ){
                     Solution newSol = changeVehicle(oldSolution, myVehicles, v, vi, mapMyActions, myActions, pickupPosition);
@@ -282,8 +276,8 @@ public class CentralizedMain implements CentralizedBehavior {
         // Change order of tasks
         int t = v;
         int length = 0;
-        while(nextActions.get(t) != null){
-            t = nextActions.get(t);
+        while(nextActions.get(t).getKey() != null){
+            t = nextActions.get(t).getKey();
             length ++;
         }
         if (length >= 2){
@@ -307,13 +301,13 @@ public class CentralizedMain implements CentralizedBehavior {
             
         Solution currentSolution = (Solution) (oldSolution.clone());
         int tPrev = v;
-        ArrayList<Integer> nextActions = oldSolution.getNextActions();
+        ArrayList<Map.Entry<Integer, Task>> nextActions = oldSolution.getNextActions();
 
-        int t1 = nextActions.get(tPrev);
+        int t1 = nextActions.get(tPrev).getKey();
         int count = 1;
         while(count < ti){
             tPrev = t1;
-            t1 = nextActions.get(t1);
+            t1 = nextActions.get(t1).getKey();
             count++;
         }
 
@@ -328,7 +322,7 @@ public class CentralizedMain implements CentralizedBehavior {
 
         Integer numberTasks = oldSolution.getNumberTasks();
         Integer numberVehicles = oldSolution.getNumberVehicles();
-        ArrayList<Map.Entry<Integer, Task>> oldActions = oldSolution.getNextActionsBis();
+        ArrayList<Map.Entry<Integer, Task>> oldActions = oldSolution.getNextActions();
         ArrayList<Integer> times = oldSolution.getTimes();
         Vehicle myVehicle = myVehicles.get(vi);
         Vehicle nextVehicle = myVehicles.get(v);
@@ -354,6 +348,7 @@ public class CentralizedMain implements CentralizedBehavior {
             }
             correspondingDeliveryPosition+=1;
         }
+        Task correspondingDeliveryTask = myActions.get(correspondingDeliveryPosition).getValue();
 
         for (int j= pickupPosition; j<correspondingDeliveryPosition; j++){
             Map.Entry<Integer, Task> currentAction = myActions.get(j);
@@ -362,7 +357,7 @@ public class CentralizedMain implements CentralizedBehavior {
             Integer actionOccuringLater = oldActions.get(currentActionId).getKey();
             Task currentTask = currentAction.getValue();
             newActions.set(actionOccuringBefore, new  SimpleEntry<Integer, Task> (actionOccuringLater, currentTask));
-            newActions.remove(currentAction);
+            //newActions.remove(currentAction);
             newTimes.set(currentActionId, times.get(currentActionId)-1);
             if(natureOfTask(actionOccuringBefore, numberTasks).equals("PICKUP")){
                 newCities.set(actionOccuringBefore, currentTask.pickupCity);
@@ -374,7 +369,7 @@ public class CentralizedMain implements CentralizedBehavior {
         
         Integer nextActionToModify = correspondingDeliveryPosition;
         Map.Entry<Integer, Task> nextActionMap = oldActions.get(nextActionToModify);
-        while(!oldActions.get(correspondingDeliveryPosition).getValue().equals(null)){
+        while(!oldActions.get(correspondingDeliveryPosition).getKey().equals(null)){
             Integer actionOccuringBeforeDeliveryId = oldActions.indexOf(nextActionMap);
             Task actionOccuringBeforeDelivery = oldActions.get(actionOccuringBeforeDeliveryId).getValue();
             nextActionToModify = oldActions.get(nextActionToModify).getKey();
@@ -388,29 +383,30 @@ public class CentralizedMain implements CentralizedBehavior {
             newTimes.set(nextActionToModify, times.get(nextActionToModify)-1);
         }
 
+        // Adding these two Actions to the second vehicle
+        // We have to add the pickup and related delivery taken from other vehicle to the new one
+        // We do that by adding it at the beginning of the task 
 
-
-
-        //LETS DEAL WITH THE SECOND VEHICLE (The one recieving the task from vi) 
-        // TODO: FILL THE CITIES/VEHICLES LIKE THE FIRST PART 
+        Integer correspondingDeliveryActionId = myActions.get(correspondingDeliveryPosition).getKey();
         newActions.set(2*numberTasks+v, new SimpleEntry<Integer, Task>(pickedActionId, pickedTask));
-        Integer nextActionToModify = pickedActionId;
-        //newCities.set(pickedActionId)
-        while(!oldActions.get(pickedActionId).getValue().equals(null)){
+        newActions.set(pickedActionId, new SimpleEntry<Integer, Task>(myActions.get(correspondingDeliveryPosition).getKey(), pickedTask));
+        newCities.set(pickedActionId, pickedTask.pickupCity);
+        newVehicles.set(pickedActionId, nextVehicle);
+        newActions.set(correspondingDeliveryActionId, oldActions.get(2*numberTasks+v));
+        newCities.set(correspondingDeliveryActionId, myActions.get(correspondingDeliveryPosition).getValue().deliveryCity);
+        newVehicles.set(correspondingDeliveryActionId, nextVehicle);
 
-            Map.Entry<Integer, Task> MapOccuringAfterPickup = oldActions.get(nextActionToModify);
-            newActions.set(nextActionToModify, new SimpleEntry<Integer, Task>(MapOccuringAfterPickup.getKey(), MapOccuringAfterPickup.getValue()));
-            nextActionToModify = MapOccuringAfterPickup.getKey();
+        Integer windowAction = oldActions.get(2*numberTasks+v).getKey();
+        Integer timeIncrement = new Integer(1);
+        while(!windowAction.equals(null)){
+            newTimes.set(oldActions.get(windowAction).getKey(), timeIncrement);
+            windowAction = oldActions.get(windowAction).getKey();
+            timeIncrement+=1;
         }
-
-
         
 
         
-
-
-        
-        return null;
+        return new Solution(newActions, newTimes, newVehicles, numberTasks, numberVehicles, newCities);
     }
     public List<Plan> plan(List<Vehicle> myVehicles, TaskSet tasks) {
         //long time_start = System.currentTimeMillis();
