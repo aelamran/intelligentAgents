@@ -50,7 +50,7 @@ public class Solution {
                  */
                 // TODO: check that load of task is smaller than cap of vehicle
             }
-            
+
             if (nextActionOfI == null) {
                 continue;
             }
@@ -80,7 +80,7 @@ public class Solution {
             }
 
             // Check that all vehicles start at 1
-            if (times.get(firstVehicleTask) != 1) {
+            if (firstVehicleTask != null && times.get(firstVehicleTask) != 1) {
                 return false;
             }
         }
