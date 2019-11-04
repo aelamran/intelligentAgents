@@ -62,7 +62,70 @@ public class CentralizedMain implements CentralizedBehavior {
 		this.topology = topology;
 		this.distribution = distribution;
 		this.agent = agent;
-	}
+    }
+    
+    private Solution getClosestInitialSolution(List<Vehicle> myVehicles, TaskSet tasks) {
+        Integer numberVehicles = myVehicles.size();
+        Integer numberTasks = tasks.size();
+        ArrayList<Map.Entry<Integer, Task>> nextActions = initializeNextActions(2 * numberTasks + numberVehicles);
+        HashMap<Integer, City> vehicleCity = new HashMap<Integer, City>();
+        HashMap<Integer, Integer> LastActionIdMap = new HashMap<Integer, Integer>();
+        ArrayList<Vehicle> vehicles = new ArrayList<Vehicle>(Arrays.asList(new Vehicle[2 * numberTasks]));
+        ArrayList<City> cities = new ArrayList<City>(Arrays.asList(new City[2 * numberTasks]));
+        HashMap<Integer, Integer> timesVehicles = new HashMap<Integer, Integer>();
+        ArrayList<Integer> times = new ArrayList<Integer>(Arrays.asList(new Integer[2 * numberTasks]));
+
+
+        for(int i=0; i<numberVehicles; i++){
+            timesVehicles.put(i, 0);
+        }
+
+        for(int i=0; i<numberVehicles; i++){
+            LastActionIdMap.put(i, 2*numberTasks+i);
+        }
+
+
+        for(int i=0; i<numberVehicles; i++){
+            Vehicle v = myVehicles.get(i);
+            vehicleCity.put(i, v.homeCity());
+        }
+
+        Double minDistance = Double.MAX_VALUE;
+        Double tmpDistance;
+        int closestVehicleId=0;
+        Integer taskId;
+        int timeAction;
+        for(Task task: tasks){
+            taskId = task.id;
+
+            for(int i=0; i<numberVehicles; i++){
+                tmpDistance = vehicleCity.get(i).distanceTo(task.pickupCity);
+                if(tmpDistance<minDistance){
+
+                    minDistance = tmpDistance;
+                    closestVehicleId = i;
+                     
+                }
+            }
+            nextActions.set(LastActionIdMap.get(closestVehicleId), new SimpleEntry<Integer, Task>(taskId, task));
+            nextActions.set(taskId, new SimpleEntry<Integer, Task>(numberTasks + taskId, task));
+            nextActions.set(numberTasks + taskId, new SimpleEntry<Integer, Task>(null, task));
+            LastActionIdMap.put(closestVehicleId, numberTasks + taskId);
+            vehicles.set((taskId), myVehicles.get(closestVehicleId));
+            cities.set(taskId, task.pickupCity);
+            cities.set(numberTasks + taskId, task.deliveryCity);
+            vehicleCity.put(closestVehicleId, task.deliveryCity);
+
+            
+
+            timeAction = timesVehicles.get(closestVehicleId) + 1;
+            times.set(taskId, timeAction);
+            times.set(numberTasks + taskId, timeAction + 1);
+            timesVehicles.put(closestVehicleId, timeAction+1);
+
+        }
+        return new Solution(nextActions, times, vehicles, numberTasks, numberVehicles, cities);
+    }
 
 	private Solution getInitialSolution(List<Vehicle> myVehicles, TaskSet tasks) {
 		Integer numberTasks = tasks.size();
@@ -706,8 +769,7 @@ public class CentralizedMain implements CentralizedBehavior {
 		// long time_start = System.currentTimeMillis();
 
 		// System.out.println("Agent " + agent.id() + " has tasks " + tasks);
-		Solution initialSolution = getInitialSolution(myVehicles, tasks);
-
+		Solution initialSolution = getClosestInitialSolution(myVehicles, tasks);
 		Solution currentSolution = (Solution) (initialSolution.clone());
 		// Implementing the algorithm
 		int i = 0;
