@@ -41,7 +41,12 @@ public class CentralizedMain implements CentralizedBehavior {
 	private Agent agent;
 	private long timeout_setup;
 	private long timeout_plan;
-	private Double TRESHOLD_PROBA=0.4;
+	private Double TRESHOLD_OLD_SOL = 0.4;
+	private Double TRESHOLD_OTHER_NEIGHBOR = 0.1;
+	private final int MAX_ITERATIONS = 50000;
+
+
+	private Double COST_DIFFERENCE = 0.0;
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
@@ -62,72 +67,68 @@ public class CentralizedMain implements CentralizedBehavior {
 		this.topology = topology;
 		this.distribution = distribution;
 		this.agent = agent;
-    }
-    
-    private Solution getClosestInitialSolution(List<Vehicle> myVehicles, TaskSet tasks) {
-        Integer numberVehicles = myVehicles.size();
-        Integer numberTasks = tasks.size();
-        ArrayList<Map.Entry<Integer, Task>> nextActions = initializeNextActions(2 * numberTasks + numberVehicles);
-        HashMap<Integer, City> vehicleCity = new HashMap<Integer, City>();
-        HashMap<Integer, Integer> LastActionIdMap = new HashMap<Integer, Integer>();
-        ArrayList<Vehicle> vehicles = new ArrayList<Vehicle>(Arrays.asList(new Vehicle[2 * numberTasks]));
-        ArrayList<City> cities = new ArrayList<City>(Arrays.asList(new City[2 * numberTasks]));
-        HashMap<Integer, Integer> timesVehicles = new HashMap<Integer, Integer>();
-        ArrayList<Integer> times = new ArrayList<Integer>(Arrays.asList(new Integer[2 * numberTasks]));
+	}
 
+	private Solution getClosestInitialSolution(List<Vehicle> myVehicles, TaskSet tasks) {
+		Integer numberVehicles = myVehicles.size();
+		Integer numberTasks = tasks.size();
+		ArrayList<Map.Entry<Integer, Task>> nextActions = initializeNextActions(2 * numberTasks + numberVehicles);
+		HashMap<Integer, City> vehicleCity = new HashMap<Integer, City>();
+		HashMap<Integer, Integer> LastActionIdMap = new HashMap<Integer, Integer>();
+		ArrayList<Vehicle> vehicles = new ArrayList<Vehicle>(Arrays.asList(new Vehicle[2 * numberTasks]));
+		ArrayList<City> cities = new ArrayList<City>(Arrays.asList(new City[2 * numberTasks]));
+		HashMap<Integer, Integer> timesVehicles = new HashMap<Integer, Integer>();
+		ArrayList<Integer> times = new ArrayList<Integer>(Arrays.asList(new Integer[2 * numberTasks]));
 
-        for(int i=0; i<numberVehicles; i++){
-            timesVehicles.put(i, 0);
-        }
+		for (int i = 0; i < numberVehicles; i++) {
+			timesVehicles.put(i, 0);
+		}
 
-        for(int i=0; i<numberVehicles; i++){
-            LastActionIdMap.put(i, 2*numberTasks+i);
-        }
+		for (int i = 0; i < numberVehicles; i++) {
+			LastActionIdMap.put(i, 2 * numberTasks + i);
+		}
 
+		for (int i = 0; i < numberVehicles; i++) {
+			Vehicle v = myVehicles.get(i);
+			vehicleCity.put(i, v.homeCity());
+		}
 
-        for(int i=0; i<numberVehicles; i++){
-            Vehicle v = myVehicles.get(i);
-            vehicleCity.put(i, v.homeCity());
-        }
+		Double minDistance = Double.MAX_VALUE;
+		Double tmpDistance;
+		int closestVehicleId = 0;
+		Integer taskId;
+		int timeAction;
+		for (Task task : tasks) {
+			taskId = task.id;
 
-        Double minDistance = Double.MAX_VALUE;
-        Double tmpDistance;
-        int closestVehicleId=0;
-        Integer taskId;
-        int timeAction;
-        for(Task task: tasks){
-            taskId = task.id;
-			
 			minDistance = Double.MAX_VALUE;
 
-            for(int i=0; i<numberVehicles; i++){
-                tmpDistance = vehicleCity.get(i).distanceTo(task.pickupCity);
-                if(tmpDistance<minDistance){
+			for (int i = 0; i < numberVehicles; i++) {
+				tmpDistance = myVehicles.get(i).homeCity().distanceTo(task.pickupCity);
+				if (tmpDistance < minDistance) {
 
-                    minDistance = tmpDistance;
-                    closestVehicleId = i;
-                     
-                }
-            }
-            nextActions.set(LastActionIdMap.get(closestVehicleId), new SimpleEntry<Integer, Task>(taskId, task));
-            nextActions.set(taskId, new SimpleEntry<Integer, Task>(numberTasks + taskId, task));
-            nextActions.set(numberTasks + taskId, new SimpleEntry<Integer, Task>(null, task));
-            LastActionIdMap.put(closestVehicleId, numberTasks + taskId);
-            vehicles.set((taskId), myVehicles.get(closestVehicleId));
-            cities.set(taskId, task.pickupCity);
-            cities.set(numberTasks + taskId, task.deliveryCity);
-            vehicleCity.put(closestVehicleId, task.deliveryCity);
+					minDistance = tmpDistance;
+					closestVehicleId = i;
 
-            
+				}
+			}
+			nextActions.set(LastActionIdMap.get(closestVehicleId), new SimpleEntry<Integer, Task>(taskId, task));
+			nextActions.set(taskId, new SimpleEntry<Integer, Task>(numberTasks + taskId, task));
+			nextActions.set(numberTasks + taskId, new SimpleEntry<Integer, Task>(null, task));
+			LastActionIdMap.put(closestVehicleId, numberTasks + taskId);
+			vehicles.set((taskId), myVehicles.get(closestVehicleId));
+			cities.set(taskId, task.pickupCity);
+			cities.set(numberTasks + taskId, task.deliveryCity);
+			vehicleCity.put(closestVehicleId, task.deliveryCity);
 
-            timeAction = timesVehicles.get(closestVehicleId) + 1;
-            times.set(taskId, timeAction);
-            times.set(numberTasks + taskId, timeAction + 1);
-            timesVehicles.put(closestVehicleId, timeAction+1);
+			timeAction = timesVehicles.get(closestVehicleId) + 1;
+			times.set(taskId, timeAction);
+			times.set(numberTasks + taskId, timeAction + 1);
+			timesVehicles.put(closestVehicleId, timeAction + 1);
 
-        }
-        return new Solution(nextActions, times, vehicles, numberTasks, numberVehicles, cities);
-    }
+		}
+		return new Solution(nextActions, times, vehicles, numberTasks, numberVehicles, cities);
+	}
 
 	private Solution getInitialSolution(List<Vehicle> myVehicles, TaskSet tasks) {
 		Integer numberTasks = tasks.size();
@@ -222,7 +223,7 @@ public class CentralizedMain implements CentralizedBehavior {
 				} else {
 					break;
 				}
-			}		
+			}
 
 			v++;
 			if (v >= numberVehicles) {
@@ -293,16 +294,16 @@ public class CentralizedMain implements CentralizedBehavior {
 
 				if (actionId < sol.getNumberTasks()) {
 					plan.appendPickup(getTaskById(tasks, actionId));
-				
+
 				} else if (actionId < 2 * sol.getNumberTasks()) {
 					plan.appendDelivery(getTaskById(tasks, actionId - sol.getNumberTasks()));
-				
+
 				} else {
 					System.out.println("Error on index ");
 				}
 				oldCity = newCity;
 			}
-			
+
 			plans.add(plan);
 			cost += plan.totalDistance() * myVehicles.get(i).costPerKm();
 
@@ -311,11 +312,11 @@ public class CentralizedMain implements CentralizedBehavior {
 			distanceCrossedByVehicle = 0.0;
 
 		}
-		
+
 		return new SimpleEntry(plans, cost);
 	}
 
-	public String natureOfTask(Integer t, int numberTasks) {
+	public static String natureOfTask(Integer t, int numberTasks) {
 		if (0 <= t && t < numberTasks) {
 			return "PICKUP";
 		} else {
@@ -331,7 +332,7 @@ public class CentralizedMain implements CentralizedBehavior {
 
 		Map.Entry<Integer, Task> currentActionMap = nextActions.get(2 * numberTasks + v);
 		Integer idCurrentAction = currentActionMap.getKey();
-		if (idCurrentAction == null){
+		if (idCurrentAction == null) {
 			return actionsOfVehicle;
 		}
 		actionsOfVehicle.add(currentActionMap);
@@ -352,9 +353,7 @@ public class CentralizedMain implements CentralizedBehavior {
 		ArrayList<Map.Entry<Integer, Task>> nextActions = (ArrayList<Entry<Integer, Task>>) oldSolution.getNextActions()
 				.clone();
 
-		do {
-			v = r.ints(0, (oldSolution.numberVehicles)).findFirst().getAsInt();
-		} while (nextActions.get(v).getKey() == null);
+		v = r.ints(0, (oldSolution.numberVehicles)).findFirst().getAsInt();
 		Vehicle vehicle = myVehicles.get(v);
 
 		// Change vehicle
@@ -362,7 +361,7 @@ public class CentralizedMain implements CentralizedBehavior {
 		for (int vi = 0; vi < oldSolution.numberVehicles; vi++) {
 			if (vi != v) {
 				ArrayList<Map.Entry<Integer, Task>> myActions = getActionsOfVehicle(oldSolution, vi);
-				if (myActions==null || myActions.isEmpty()){
+				if (myActions == null || myActions.isEmpty()) {
 					continue;
 				}
 				int pickupPosition = 0;// = nextActions.get(2 * numberOftasks + vi).getKey();
@@ -372,7 +371,6 @@ public class CentralizedMain implements CentralizedBehavior {
 							pickupPosition);
 					if (newSol != null) {
 						neighbors.add(newSol);
-						// List<Plan> plans = transformSolutionToPlans(tasks, myVehicles, newSol);
 					}
 				}
 			}
@@ -380,7 +378,6 @@ public class CentralizedMain implements CentralizedBehavior {
 
 		// Change order of tasks
 		int t = v;
-
 
 		ArrayList<Entry<Integer, Task>> actionsOfVehicle = getActionsOfVehicle(oldSolution, v);
 		int length = actionsOfVehicle.size();
@@ -405,12 +402,15 @@ public class CentralizedMain implements CentralizedBehavior {
 				}
 			}
 		}
+		if (neighbors.isEmpty()) {
+			System.out.println("empty");
+		}
 
 		return neighbors;
 
 	}
 
-	public int getWeightOfCurrentTasks(Solution sol, int v, int ti) {
+	public boolean checkLoadConstraints(Solution sol, int v, int capacity) {
 
 		ArrayList<Map.Entry<Integer, Task>> nextActions = sol.getNextActions();
 		int numberTasks = sol.getNumberTasks();
@@ -419,16 +419,19 @@ public class CentralizedMain implements CentralizedBehavior {
 		Entry<Integer, Task> currentAction = nextActions.get(2 * numberTasks + v);
 
 		int used = 0;
-		while (nextActions.get(currentActionId).getKey() != null && currentActionId != ti) {
+		while (nextActions.get(currentActionId).getKey() != null) {
 			if (natureOfTask(currentActionId, numberTasks) == "PICKUP") {
 				used += currentAction.getValue().weight;
+				if (used > capacity) {
+					return false;
+				}
 			} else {
 				used -= currentAction.getValue().weight;
 			}
 			currentAction = nextActions.get(currentActionId);
 			currentActionId = currentAction.getKey();
 		}
-		return used;
+		return true;
 	}
 
 	private Solution changeTaskOrder(Solution oldSolution, TaskSet tasks, List<Vehicle> myVehicles, int v, int ti,
@@ -440,20 +443,6 @@ public class CentralizedMain implements CentralizedBehavior {
 		Task taskI = ((ti < numberTasks) ? getTaskById(tasks, ti) : getTaskById(tasks, (ti - numberTasks)));
 		Task taskJ = ((tj < numberTasks) ? getTaskById(tasks, tj) : getTaskById(tasks, (tj - numberTasks)));
 
-		// Check capacity of vehicle
-		if (natureOfTask(tj, numberTasks) == "PICKUP") {
-			if (getWeightOfCurrentTasks(oldSolution, v, ti)==30){
-				System.out.println("full");
-			}
-			if (getWeightOfCurrentTasks(oldSolution, v, ti) + taskJ.weight > myVehicles.get(v).capacity()) {
-				return null;
-			}
-			
-		}
-
-		if (ti == 49 || tj == 49) {
-			System.out.println("49");
-		}
 		Solution currentSolution = (Solution) (oldSolution.clone());
 
 		int tPrev = v;
@@ -465,7 +454,6 @@ public class CentralizedMain implements CentralizedBehavior {
 
 		int numberVehicles = oldSolution.getNumberVehicles();
 		ArrayList<City> cities = (ArrayList<City>) oldSolution.getCities().clone();
-		
 
 		ArrayList<Integer> oldTimes = (ArrayList<Integer>) oldSolution.getTimes().clone();
 		ArrayList<Vehicle> oldVehicles = oldSolution.getVehicles();
@@ -473,8 +461,6 @@ public class CentralizedMain implements CentralizedBehavior {
 		if (Math.abs(ti - tj) == numberTasks) {
 			return currentSolution;
 		}
-
-	
 
 		Entry<Integer, Task> afterTi = nextActions.get(ti);
 		Entry<Integer, Task> afterTj = nextActions.get(tj);
@@ -504,22 +490,18 @@ public class CentralizedMain implements CentralizedBehavior {
 
 		}
 
-		// if (afterTi.getValue().id != taskJ.id && afterTj.getValue().id != taskI.id) {
 		// check that we don't reverse pickup and delivery of same task
 
-		
 		int timeI = oldTimes.get(ti);
 		oldTimes.set(ti, oldTimes.get(tj));
 		oldTimes.set(tj, timeI);
 
-
-
 		Solution newSolution = new Solution(nextActions, oldTimes, oldVehicles, numberTasks, numberVehicles, cities);
 
-		if (newSolution.checkConstraints()) {
-			if (ti == 49 || tj == 49) {
-				System.out.println("49");
-			}
+		// Check capacity of vehicle
+
+		if (checkLoadConstraints(newSolution, v, myVehicles.get(v).capacity()) && newSolution.checkConstraints()) {
+
 			return newSolution;
 		} else {
 			return null;
@@ -537,17 +519,16 @@ public class CentralizedMain implements CentralizedBehavior {
 		return -1;
 	}
 
-
-	private Solution changeVehicle(Solution oldSolution, List<Vehicle> myVehicles, int v, int vi,
-			Map.Entry<Integer, Task> actionToPick, ArrayList<Map.Entry<Integer, Task>> myActions,
-			Integer pickupPosition) {
+	private Solution changeVehicle(Solution oldSolution, List<Vehicle> myVehicles, int vehicleToAddTaskTo,
+			int vehicleToRemoveFrom, Map.Entry<Integer, Task> actionToPick,
+			ArrayList<Map.Entry<Integer, Task>> myActions, Integer pickupPosition) {
 
 		Integer numberTasks = oldSolution.getNumberTasks();
 		Integer numberVehicles = oldSolution.getNumberVehicles();
 		ArrayList<Map.Entry<Integer, Task>> oldActions = oldSolution.getNextActions();
 		ArrayList<Integer> times = oldSolution.getTimes();
-		Vehicle myVehicle = myVehicles.get(vi);
-		Vehicle nextVehicle = myVehicles.get(v);
+		Vehicle myVehicle = myVehicles.get(vehicleToRemoveFrom);
+		Vehicle nextVehicle = myVehicles.get(vehicleToAddTaskTo);
 
 		// New solution parameters
 		ArrayList<Integer> newTimes = (ArrayList<Integer>) times.clone();
@@ -558,88 +539,76 @@ public class CentralizedMain implements CentralizedBehavior {
 		Integer pickedActionId = actionToPick.getKey();
 		Task pickedTask = actionToPick.getValue();
 		Integer correspondingDeliveryPosition = new Integer(0);
-		for (Map.Entry<Integer, Task> currentMap : myActions) {
+		correspondingDeliveryPosition = myActions
+				.indexOf(new SimpleEntry<Integer, Task>(pickedActionId + numberTasks, pickedTask));
 
-			if (pickedTask.id == currentMap.getValue().id) {
-				if (natureOfTask(currentMap.getKey(), numberTasks).equals("DELIVERY")) {
-					Integer correspondingDelivery = currentMap.getKey();
-					break;
-				}
-			}
-			correspondingDeliveryPosition += 1;
-		}
 		Integer correspondingDeliveryActionId = myActions.get(correspondingDeliveryPosition).getKey();
 
 		Map.Entry<Integer, Task> currentAction = myActions.get(pickupPosition);
 		Integer currentActionId = currentAction.getKey();
-		Integer actionOccuringBefore = oldActions.indexOf(currentAction);
-		Integer actionOccuringLater = oldActions.get(currentActionId).getKey();
+
+		Integer actionOccuringBefore = 2 * numberTasks + vehicleToRemoveFrom;
+		Integer actionOccuringLater = myActions.get(pickupPosition + 1).getKey();
 		Task currentTask = currentAction.getValue();
-		if (actionOccuringLater == correspondingDeliveryActionId) {
-			newActions.set(actionOccuringBefore,
-					new SimpleEntry<Integer, Task>(oldActions.get(correspondingDeliveryActionId).getKey(),
-							oldActions.get(correspondingDeliveryActionId).getValue()));
+		if (pickupPosition + 1 == correspondingDeliveryPosition) {
+			newActions.set(actionOccuringBefore, newActions.get(correspondingDeliveryActionId));
+			
 		} else {
-			newActions.set(actionOccuringBefore, new SimpleEntry<Integer, Task>(actionOccuringLater, currentTask));
+			// before pickup
+			newActions.set(actionOccuringBefore, newActions.get(pickedActionId));
+
+			// dealing with delivery pointers for the vehicle we remove tasks from
+			
+
+			Integer actionOccuringBeforeDeliv = myActions.get(correspondingDeliveryPosition - 1).getKey();// oldActions.indexOf(currentActionDeliv);
+
+			
+			newActions.set(actionOccuringBeforeDeliv, newActions.get(correspondingDeliveryActionId));
 
 		}
 
-		for (int j = pickupPosition; j < correspondingDeliveryPosition - 1; j++) {
-			currentAction = myActions.get(j);
-			currentActionId = currentAction.getKey();
-			newTimes.set(currentActionId, times.get(currentActionId) - 1);
 
+		// Times of vehicle to remove task from
+		Integer actionToChangeTime = newActions.get(2 * numberTasks + vehicleToRemoveFrom).getKey();
+		Integer timeIncrement = new Integer(1);
+		while (actionToChangeTime != null) {
+			newTimes.set(actionToChangeTime, timeIncrement);
+			timeIncrement += 1;
+			actionToChangeTime = newActions.get(actionToChangeTime).getKey();
 		}
 
-		for (int j = correspondingDeliveryPosition; j < myActions.size(); j++) {
-			currentAction = myActions.get(j);
-			currentActionId = currentAction.getKey();
-			newTimes.set(currentActionId, times.get(currentActionId) - 2);
-
-		}
-
-		Integer nextActionToModify = correspondingDeliveryPosition;
-		Map.Entry<Integer, Task> nextActionMap = oldActions.get(nextActionToModify);
-
-		Integer actionOccuringBeforeDeliveryId = oldActions.indexOf(nextActionMap);
-		Task actionOccuringBeforeDelivery = nextActionMap.getValue();
-		nextActionToModify = oldActions.get(nextActionToModify).getKey();
-		newActions.set(actionOccuringBeforeDeliveryId,
-				new SimpleEntry<Integer, Task>(nextActionToModify, actionOccuringBeforeDelivery));
-		
-				
 
 		// Adding these two Actions to the second vehicle
 		// We have to add the pickup and related delivery taken from other vehicle to
 		// the new one
 		// We do that by adding it at the beginning of the task
 
-		newActions.set(2 * numberTasks + v, new SimpleEntry<Integer, Task>(pickedActionId, pickedTask));
-		newActions.set(pickedActionId,
-				new SimpleEntry<Integer, Task>(myActions.get(correspondingDeliveryPosition).getKey(), pickedTask));
+		newActions.set(2 * numberTasks + vehicleToAddTaskTo,
+				new SimpleEntry<Integer, Task>(pickedActionId, pickedTask));
+		newActions.set(pickedActionId, new SimpleEntry<Integer, Task>(correspondingDeliveryActionId, pickedTask));
 
 		newVehicles.set(pickedActionId, nextVehicle);
-		newActions.set(correspondingDeliveryActionId, oldActions.get(2 * numberTasks + v));
-		
+
+		newActions.set(correspondingDeliveryActionId, oldActions.get(2 * numberTasks + vehicleToAddTaskTo));
 		newVehicles.set(correspondingDeliveryActionId, nextVehicle);
 
-		Integer windowAction = oldActions.get(2 * numberTasks + v).getKey();
+		// Times of vehicle to add task to
+		Integer windowAction = oldActions.get(2 * numberTasks + vehicleToAddTaskTo).getKey();
 		newTimes.set(pickedActionId, new Integer(1));
 		newTimes.set(correspondingDeliveryActionId, new Integer(2));
 
-		Integer timeIncrement = new Integer(3);
 		while (windowAction != null) {
-			newTimes.set(windowAction, timeIncrement);
+			newTimes.set(windowAction, times.get(windowAction) + 2);
 			windowAction = oldActions.get(windowAction).getKey();
-			System.out.println(windowAction);
-			timeIncrement += 1;
 		}
 
 		Solution newSol = new Solution(newActions, newTimes, newVehicles, numberTasks, numberVehicles, newCities);
-		System.out.println(newSol.checkConstraints());
 		if (newSol.checkConstraints()) {
 			return newSol;
 		} else {
+			if (newSol.checkConstraints()) {
+				return newSol;
+			}
 			return null;
 		}
 
@@ -651,17 +620,29 @@ public class CentralizedMain implements CentralizedBehavior {
 		Solution currentSolution = (Solution) (initialSolution.clone());
 		// Implementing the algorithm
 		int i = 0;
-		final int MAX_ITERATIONS = 10000;
+		
+		Solution bestSolution = currentSolution.clone();
+		Double minCost = getCost(tasks, myVehicles, bestSolution);
+		double currentCost = getCost(tasks, myVehicles, currentSolution);
 		while (i < MAX_ITERATIONS) {
 			Solution oldSolution = currentSolution.clone();
 			HashSet<Solution> neighbors = chooseNeighbors(myVehicles, tasks, currentSolution);
-			currentSolution = localChoice(tasks, myVehicles, currentSolution, neighbors);
+			currentSolution = localChoice(tasks, myVehicles, currentSolution, neighbors).clone();
+			currentCost = getCost(tasks, myVehicles, currentSolution);
+			if (currentCost < minCost ){
+				minCost = currentCost;
+				bestSolution = currentSolution;
+			}
 
 			i++;
 		}
 
-
-
+		if (currentCost> minCost){
+			currentSolution = bestSolution;
+		}
+		System.out.println("min cost "+minCost);
+		System.out.println("min cost "+getCost(tasks, myVehicles, currentSolution));
+		
 		List<Plan> plans = transformSolutionToPlans(tasks, myVehicles, currentSolution).getKey();
 
 		long time_end = System.currentTimeMillis();
@@ -675,14 +656,7 @@ public class CentralizedMain implements CentralizedBehavior {
 
 	private Solution localChoice(TaskSet tasks, List<Vehicle> myVehicles, Solution oldSolution,
 			HashSet<Solution> neighbors) {
-		// Choose random
-		/*
-		 * Random r = new Random(15);
-		 * 
-		 * int index = r.nextInt(neighbors.size()); Iterator<Solution> iter =
-		 * neighbors.iterator(); for (int i = 0; i < index; i++) { iter.next(); } return
-		 * iter.next();
-		 */
+
 		double oldCost = getCost(tasks, myVehicles, oldSolution);
 		System.out.println("old cost " + oldCost);
 		Solution newSol = oldSolution.clone();
@@ -690,8 +664,7 @@ public class CentralizedMain implements CentralizedBehavior {
 		for (Solution sol : neighbors) {
 			newCost = getCost(tasks, myVehicles, sol);
 
-			System.out.println("newnew cost " + newCost);
-			if (newCost < oldCost) {
+			if (newCost < oldCost - COST_DIFFERENCE) {
 				newSol = sol;
 				oldCost = newCost;
 
@@ -700,10 +673,22 @@ public class CentralizedMain implements CentralizedBehavior {
 
 		Random r = new Random();
 		double proba = r.nextDouble();
-		if (proba < TRESHOLD_PROBA){
+		if (proba < TRESHOLD_OLD_SOL) {
 			return oldSolution;
-		}
-		else{
+		} else if (proba < TRESHOLD_OLD_SOL + TRESHOLD_OTHER_NEIGHBOR) {
+			// Choose random
+			if (neighbors.isEmpty()) {
+				System.out.println("empty");
+				return oldSolution;
+			}
+			int index = r.nextInt(neighbors.size());
+			Iterator<Solution> iter = neighbors.iterator();
+			for (int i = 0; i < index; i++) {
+				iter.next();
+			}
+			return iter.next().clone();
+
+		} else {
 			return newSol;
 		}
 	}

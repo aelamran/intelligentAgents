@@ -4,6 +4,8 @@ import logist.topology.Topology.City;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+
 import logist.task.*;
 
 import logist.simulation.Vehicle;
@@ -43,12 +45,7 @@ public class Solution {
                 if (times.get(i) >= times.get(i + numberTasks)) {
                     return false;
                 }
-                /*
-                 * // check that pickup and delivery have the same vehicle if
-                 * (vehicles.get(i).id() != vehicles.get(i + numberTasks).id()) { return false;
-                 * }
-                 */
-                // TODO: check that load of task is smaller than cap of vehicle
+                
             }
 
             if (nextActionOfI == null) {
@@ -69,6 +66,7 @@ public class Solution {
             if (nextActionOfI == i) {
                 return false;
             }
+            
 
         }
 
@@ -86,6 +84,8 @@ public class Solution {
         }
         return isCorrect;
     }
+
+
 
     public ArrayList<Map.Entry<Integer, Task>> getNextActions() {
         return nextActions;
