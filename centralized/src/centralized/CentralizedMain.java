@@ -29,8 +29,7 @@ import logist.topology.Topology;
 import logist.topology.Topology.City;
 
 /**
- * A very simple auction agent that assigns all tasks to its first vehicle and
- * handles them sequentially.
+ * An agent that applies SLS algorithm
  *
  */
 @SuppressWarnings("unused")
@@ -43,7 +42,7 @@ public class CentralizedMain implements CentralizedBehavior {
 	private long timeout_plan;
 	private Double TRESHOLD_OLD_SOL = 0.4;
 	private Double TRESHOLD_OTHER_NEIGHBOR = 0.1;
-	private final int MAX_ITERATIONS = 50000;
+	private final int MAX_ITERATIONS = 30000;
 
 
 	private Double COST_DIFFERENCE = 0.0;
@@ -69,6 +68,13 @@ public class CentralizedMain implements CentralizedBehavior {
 		this.agent = agent;
 	}
 
+	/**
+	 * This method assigns each task to the vehicle with the closest home city to its delivery city, and it picks it up
+	 * and delivers it right away
+	 * @param myVehicles
+	 * @param tasks
+	 * @return
+	 */
 	private Solution getClosestInitialSolution(List<Vehicle> myVehicles, TaskSet tasks) {
 		Integer numberVehicles = myVehicles.size();
 		Integer numberTasks = tasks.size();
@@ -103,7 +109,9 @@ public class CentralizedMain implements CentralizedBehavior {
 
 			minDistance = Double.MAX_VALUE;
 
+			// Choose the closest vehicle
 			for (int i = 0; i < numberVehicles; i++) {
+				
 				tmpDistance = myVehicles.get(i).homeCity().distanceTo(task.pickupCity);
 				if (tmpDistance < minDistance) {
 
@@ -130,6 +138,12 @@ public class CentralizedMain implements CentralizedBehavior {
 		return new Solution(nextActions, times, vehicles, numberTasks, numberVehicles, cities);
 	}
 
+	/**
+	 * This methode gives roughly the same number of tasks to all vehicles
+	 * @param myVehicles
+	 * @param tasks
+	 * @return an initial solution for the algorithm
+	 */
 	private Solution getInitialSolution(List<Vehicle> myVehicles, TaskSet tasks) {
 		Integer numberTasks = tasks.size();
 		Integer numberVehicles = myVehicles.size();
@@ -139,14 +153,7 @@ public class CentralizedMain implements CentralizedBehavior {
 		ArrayList<Integer> times = new ArrayList<Integer>(Arrays.asList(new Integer[2 * numberTasks]));
 
 		HashMap<Integer, Integer> LastActionIdMap = new HashMap<Integer, Integer>();
-		ArrayList<Map.Entry<Integer, Task>> nextActions = initializeNextActions(2 * numberTasks + numberVehicles); // =
-																													// new
-																													// ArrayList<Map.Entry<Integer,
-																													// Task>>(2
-																													// *
-																													// numberTasks
-																													// +
-																													// numberVehicles);
+		ArrayList<Map.Entry<Integer, Task>> nextActions = initializeNextActions(2 * numberTasks + numberVehicles); 
 
 		ArrayList<Vehicle> vehicles = new ArrayList<Vehicle>(Arrays.asList(new Vehicle[2 * numberTasks]));
 
@@ -233,7 +240,13 @@ public class CentralizedMain implements CentralizedBehavior {
 		} while (v < numberVehicles);
 		return new Solution(nextActions, times, vehicles, numberTasks, numberVehicles, cities);
 	}
-
+	
+	
+	/**
+	 * Method to fill next actions with empty entries
+	 * @param length
+	 * @return
+	 */
 	private ArrayList<Entry<Integer, Task>> initializeNextActions(int length) {
 		ArrayList<Entry<Integer, Task>> nextActions = new ArrayList<Map.Entry<Integer, Task>>(length);
 		for (int i = 0; i < length; i++) {
@@ -242,6 +255,12 @@ public class CentralizedMain implements CentralizedBehavior {
 		return nextActions;
 	}
 
+	/**
+	 * returns the task by its id
+	 * @param tasks
+	 * @param id
+	 * @return
+	 */
 	public Task getTaskById(TaskSet tasks, int id) {
 		if (id >= tasks.size()) {
 			id = id - tasks.size();
@@ -254,6 +273,13 @@ public class CentralizedMain implements CentralizedBehavior {
 		return null;
 	}
 
+	/**
+	 * Transforms the solution to a plan first and returns its cost
+	 * @param tasks
+	 * @param myVehicles
+	 * @param solution
+	 * @return
+	 */
 	public double getCost(TaskSet tasks, List<Vehicle> myVehicles, Solution solution) {
 		return transformSolutionToPlans(tasks, myVehicles, solution).getValue();
 	}
@@ -267,8 +293,6 @@ public class CentralizedMain implements CentralizedBehavior {
 		ArrayList<City> cities = sol.getCities();
 		double cost = 0.0;
 
-		double distanceCrossed = 0.0;
-		double distanceCrossedByVehicle = 0.0;
 
 		for (int i = 0; i < sol.numberVehicles; i++) {
 			City oldCity = myVehicles.get(i).homeCity();
@@ -281,6 +305,7 @@ public class CentralizedMain implements CentralizedBehavior {
 
 			ArrayList<Entry<Integer, Task>> actionsOfVehicle = getActionsOfVehicle(sol, i);
 
+			// For each action, add the moves to the different cities
 			for (int a = 0; a < actionsOfVehicle.size(); a++) {
 				actionId = actionsOfVehicle.get(a).getKey();
 				City newCity = cities.get(actionId);
@@ -288,14 +313,15 @@ public class CentralizedMain implements CentralizedBehavior {
 
 				for (City city : oldCity.pathTo(newCity)) {
 					plan.appendMove(city);
-					distanceCrossedByVehicle += lastCityOnPath.distanceTo(city);
 					lastCityOnPath = city;
 				}
 
+				// If it's a pickup
 				if (actionId < sol.getNumberTasks()) {
 					plan.appendPickup(getTaskById(tasks, actionId));
 
-				} else if (actionId < 2 * sol.getNumberTasks()) {
+				} // If it's a delivery
+				else if (actionId < 2 * sol.getNumberTasks()) {
 					plan.appendDelivery(getTaskById(tasks, actionId - sol.getNumberTasks()));
 
 				} else {
@@ -307,14 +333,12 @@ public class CentralizedMain implements CentralizedBehavior {
 			plans.add(plan);
 			cost += plan.totalDistance() * myVehicles.get(i).costPerKm();
 
-			distanceCrossedByVehicle *= myVehicles.get(i).costPerKm();
-			distanceCrossed += distanceCrossedByVehicle;
-			distanceCrossedByVehicle = 0.0;
 
 		}
 
-		return new SimpleEntry(plans, cost);
+		return new SimpleEntry<List<Plan>, Double>(plans, cost);
 	}
+	
 
 	public static String natureOfTask(Integer t, int numberTasks) {
 		if (0 <= t && t < numberTasks) {
@@ -324,6 +348,12 @@ public class CentralizedMain implements CentralizedBehavior {
 		}
 	}
 
+	/**
+	 * loops through next actions to extract the actions of one vehicle in order
+	 * @param sol
+	 * @param v
+	 * @return
+	 */
 	public ArrayList<Map.Entry<Integer, Task>> getActionsOfVehicle(Solution sol, int v) {
 
 		ArrayList<Map.Entry<Integer, Task>> actionsOfVehicle = new ArrayList<Map.Entry<Integer, Task>>();
@@ -344,14 +374,23 @@ public class CentralizedMain implements CentralizedBehavior {
 		return actionsOfVehicle;
 	}
 
+	
+	/**
+	 * Method used to generate the neighbors of a solution.
+	 * Picks a random vehicle and does changes to it: change tasks from a vehicle to another, and swap tasks of the same
+	 * vehicle.
+	 * @param myVehicles
+	 * @param tasks
+	 * @param oldSolution
+	 * @return
+	 */
 	public HashSet<Solution> chooseNeighbors(List<Vehicle> myVehicles, TaskSet tasks, Solution oldSolution) {
 		HashSet<Solution> neighbors = new HashSet<Solution>();
 		Integer numberOftasks = oldSolution.getNumberTasks();
 		Random r = new Random();
 		// Choose a vehicle at random
 		int v = 0;
-		ArrayList<Map.Entry<Integer, Task>> nextActions = (ArrayList<Entry<Integer, Task>>) oldSolution.getNextActions()
-				.clone();
+		ArrayList<Map.Entry<Integer, Task>> nextActions = (ArrayList<Entry<Integer, Task>>) oldSolution.getNextActions().clone();
 
 		v = r.ints(0, (oldSolution.numberVehicles)).findFirst().getAsInt();
 		Vehicle vehicle = myVehicles.get(v);
@@ -392,7 +431,7 @@ public class CentralizedMain implements CentralizedBehavior {
 					action2 = actionsOfVehicle.get(tj).getKey();
 					if (Math.abs(action1 - action2) != oldSolution.getNumberTasks()) {
 
-						Solution newSol = changeTaskOrder(oldSolution, tasks, myVehicles, v, action1, action2);
+						Solution newSol = changeActionsOrder(oldSolution, tasks, myVehicles, v, action1, action2);
 
 						if (newSol != null) {
 							neighbors.add(newSol);
@@ -410,6 +449,13 @@ public class CentralizedMain implements CentralizedBehavior {
 
 	}
 
+	/**
+	 * This method checks that at any given time the load of the vehicle v doesn't exceed its capacity
+	 * @param sol The solution to check
+	 * @param v
+	 * @param capacity
+	 * @return
+	 */
 	public boolean checkLoadConstraints(Solution sol, int v, int capacity) {
 
 		ArrayList<Map.Entry<Integer, Task>> nextActions = sol.getNextActions();
@@ -434,7 +480,18 @@ public class CentralizedMain implements CentralizedBehavior {
 		return true;
 	}
 
-	private Solution changeTaskOrder(Solution oldSolution, TaskSet tasks, List<Vehicle> myVehicles, int v, int ti,
+	/**
+	 * Given two actions of the same vehicle, this method checks that they don't involve the same task and swaps them.  Then,
+	 * it checks that the new solutions respects the constraints
+	 * @param oldSolution
+	 * @param tasks
+	 * @param myVehicles
+	 * @param v
+	 * @param ti
+	 * @param tj
+	 * @return
+	 */
+	private Solution changeActionsOrder(Solution oldSolution, TaskSet tasks, List<Vehicle> myVehicles, int v, int ti,
 			int tj) {
 
 		int numberTasks = oldSolution.getNumberTasks();
@@ -446,8 +503,7 @@ public class CentralizedMain implements CentralizedBehavior {
 		Solution currentSolution = (Solution) (oldSolution.clone());
 
 		int tPrev = v;
-		ArrayList<Map.Entry<Integer, Task>> nextActions = (ArrayList<Entry<Integer, Task>>) oldSolution.getNextActions()
-				.clone();
+		ArrayList<Map.Entry<Integer, Task>> nextActions = (ArrayList<Entry<Integer, Task>>) oldSolution.getNextActions().clone();
 
 		int t1 = nextActions.get(tPrev).getKey();
 		int count = 1;
@@ -508,6 +564,12 @@ public class CentralizedMain implements CentralizedBehavior {
 		}
 	}
 
+	/**
+	 * Get the action before ti
+	 * @param nextActions
+	 * @param ti
+	 * @return
+	 */
 	private int getEntryBefore(ArrayList<Entry<Integer, Task>> nextActions, int ti) {
 		Integer nextActionOne;
 		for (int i = 0; i < nextActions.size(); i++) {
@@ -519,6 +581,17 @@ public class CentralizedMain implements CentralizedBehavior {
 		return -1;
 	}
 
+	/**
+	 * This method takes the first task of one vehicle and puts it in the beginning for the other vehicle 
+	 * @param oldSolution
+	 * @param myVehicles
+	 * @param vehicleToAddTaskTo
+	 * @param vehicleToRemoveFrom
+	 * @param actionToPick
+	 * @param myActions
+	 * @param pickupPosition
+	 * @return
+	 */
 	private Solution changeVehicle(Solution oldSolution, List<Vehicle> myVehicles, int vehicleToAddTaskTo,
 			int vehicleToRemoveFrom, Map.Entry<Integer, Task> actionToPick,
 			ArrayList<Map.Entry<Integer, Task>> myActions, Integer pickupPosition) {
@@ -614,6 +687,7 @@ public class CentralizedMain implements CentralizedBehavior {
 
 	}
 
+	
 	public List<Plan> plan(List<Vehicle> myVehicles, TaskSet tasks) {
 		long time_start = System.currentTimeMillis();
 		Solution initialSolution = getClosestInitialSolution(myVehicles, tasks);
@@ -629,6 +703,8 @@ public class CentralizedMain implements CentralizedBehavior {
 			HashSet<Solution> neighbors = chooseNeighbors(myVehicles, tasks, currentSolution);
 			currentSolution = localChoice(tasks, myVehicles, currentSolution, neighbors).clone();
 			currentCost = getCost(tasks, myVehicles, currentSolution);
+			
+			// Remember the best seen solution overall
 			if (currentCost < minCost ){
 				minCost = currentCost;
 				bestSolution = currentSolution;
@@ -636,12 +712,12 @@ public class CentralizedMain implements CentralizedBehavior {
 
 			i++;
 		}
-
+		
+		// Return the best solution overall, may not be the last one
 		if (currentCost> minCost){
 			currentSolution = bestSolution;
 		}
 		System.out.println("min cost "+minCost);
-		System.out.println("min cost "+getCost(tasks, myVehicles, currentSolution));
 		
 		List<Plan> plans = transformSolutionToPlans(tasks, myVehicles, currentSolution).getKey();
 
@@ -653,7 +729,17 @@ public class CentralizedMain implements CentralizedBehavior {
 		}
 		return plans;
 	}
-
+	
+	
+	/**
+	 * Given an old solution and a set of neighbors, this method returns a local choice.
+	 * With some probabilities, it either returns the old solution, the best solution locally, or one of the neighbors randomly.
+	 * @param tasks
+	 * @param myVehicles
+	 * @param oldSolution
+	 * @param neighbors
+	 * @return
+	 */
 	private Solution localChoice(TaskSet tasks, List<Vehicle> myVehicles, Solution oldSolution,
 			HashSet<Solution> neighbors) {
 
