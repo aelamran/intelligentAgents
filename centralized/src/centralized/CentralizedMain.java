@@ -42,7 +42,7 @@ public class CentralizedMain implements CentralizedBehavior {
 	private long timeout_plan;
 	private Double TRESHOLD_OLD_SOL = 0.4;
 	private Double TRESHOLD_OTHER_NEIGHBOR = 0.1;
-	private final int MAX_ITERATIONS = 30000;
+	private final int MAX_ITERATIONS = 20000;
 
 
 	private Double COST_DIFFERENCE = 0.0;
