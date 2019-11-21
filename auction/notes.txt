@@ -5,7 +5,8 @@ if my_marginal_cost is lower than other_next_bid_estimate-const*variance
     bid with something between marginal cost and lower than other_next_bid_estimate-const*variance
 else 
     bid with something higher than other_next_bid_estimate+const*variance
-
+    OR max loss
+    
 list with old bids of adversary + margins
 method predict our next bid :
     predict adversary bid

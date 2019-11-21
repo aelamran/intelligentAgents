@@ -2,6 +2,7 @@ package template;
 
 //the list of imports
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -47,6 +48,7 @@ public class AuctionTemplate implements AuctionBehavior {
 
 	@Override
 	public void auctionResult(Task previous, int winner, Long[] bids) {
+		System.out.println(new ArrayList(Arrays.asList(bids)));
 		if (winner == agent.id()) {
 			currentCity = previous.deliveryCity;
 		}
@@ -67,6 +69,7 @@ public class AuctionTemplate implements AuctionBehavior {
 		double ratio = 1.0 + (random.nextDouble() * 0.05 * task.id);
 		double bid = ratio * marginalCost;
 
+		System.out.println(bid);
 		return (long) Math.round(bid);
 	}
 
