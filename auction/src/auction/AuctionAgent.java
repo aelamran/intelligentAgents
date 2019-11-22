@@ -33,10 +33,13 @@ public class AuctionAgent implements AuctionBehavior {
 	private Random random;
 	private Vehicle vehicle;
 	private List<Vehicle> vehicles;
+	private double cumulatedCost;
 
 	private City currentCity;
 	private Set<Task> tasksWon;
 	private Set<Task> tasksWonByOther;
+	private ArrayList<Double> bidsByOther;
+	private ArrayList<Double> marginByOther;
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
@@ -56,15 +59,29 @@ public class AuctionAgent implements AuctionBehavior {
 
 	@Override
 	public void auctionResult(Task previous, int winner, Long[] bids) {
+		Double actualBidOther;
 		System.out.println(new ArrayList(Arrays.asList(bids)));
 		if (winner == agent.id()) {
+			actualBidOther = Collections.min(Arrays.asList(bids));
+			bidsByOther.add(actualBidOther);
+			marginByOther.add(actualBidOther-getCostOfOpponent(tasksWonByOther, vehicles));
 			tasksWon.add(previous);
+			Sls sls = new Sls(topology, distribution, agent);
+			Solution actualSolution = sls.getBestSolution(vehicles, tasksWon);
+			setCumulatedCost(getCost(tasksWon, vehicles, actualSolution));
 			currentCity = previous.deliveryCity;
 		} else {
 			tasksWonByOther.add(previous);
+			actualBidOther = Collections.max(Arrays.asList(bids));
+			bidsByOther.add(actualBidOther);
+			marginByOther.add(actualBidOther-getCostOfOpponent(tasksWonByOther, vehicles));
 		}
 	}
 
+	/**
+	 * Checks if no tasks have been won
+	 * @return
+	 */
 	public boolean noTasks() {
 		if (!tasksWon.isEmpty()) {
 			return false;
@@ -79,6 +96,12 @@ public class AuctionAgent implements AuctionBehavior {
 		return noTasks;
 	}
 
+	/**
+	 * get the cost of the first task of a vehicle
+	 * @param task
+	 * @param vehicles
+	 * @return
+	 */
 	public double getCostOfTask(Task task, List<Vehicle> vehicles) {
 		double cost = Double.MAX_VALUE;
 		City pickupCity = task.pickupCity;
@@ -95,7 +118,17 @@ public class AuctionAgent implements AuctionBehavior {
 		return cost;
 	}
 
-	public double getAddedCost() {
+	/**
+	 * Computes the bid added to the cost
+	 * @return
+	 */
+	public double computeMarginalBid() {
+		if(tasksWon.isEmpty() && tasksWonByOther.isEmpty()){
+			return 0;
+		}
+		
+
+
 		return 0.0;
 	}
 
@@ -109,22 +142,32 @@ public class AuctionAgent implements AuctionBehavior {
 			return getCostOfTask(task, vehicles);
 		}
 		else{
-			//Sls sls = new Sls(topology, distribution);
 			return getCostWithAddedTask(tasksWonByOther, task, vehicles);
 		}
 
 	}
 
+
+	/** computes marginal cost of adding a task to an existing taskSet
+	 * 
+	 * @param tasks
+	 * @param task
+	 * @param vehicles
+	 * @return 
+	 */
 	public double getCostWithAddedTask(Set<Task> tasks, Task task, List<Vehicle> vehicles) {
 		Sls sls = new Sls(topology, distribution, agent);
 		Set<Task> eventuallyWonTasks = cloneTasks(tasks);
 		eventuallyWonTasks.add(task);
-		Solution myCurrentSolution = sls.getBestSolution(vehicles, tasksWon);
 		Solution myEventualSolution = sls.getBestSolution(vehicles, eventuallyWonTasks);
-		return sls.getCost(eventuallyWonTasks, vehicles, myEventualSolution)
-				- sls.getCost(tasksWon, vehicles, myCurrentSolution);
+		return sls.getCost(eventuallyWonTasks, vehicles, myEventualSolution)- cumulatedCost;
 	}
 
+	/**
+	 * Computes the bid
+	 * @param task
+	 * @return
+	 */
 	@Override
 	public Long askPrice(Task task) {
 		double marginalCost = 0.0;
@@ -146,7 +189,7 @@ public class AuctionAgent implements AuctionBehavior {
 		// If it's the first task
 		if (noTasks()) {
 			marginalCost = getCostOfTask(task, agent.vehicles());
-			bid = marginalCost + getAddedCost();
+			bid = marginalCost + computeMarginalBid();
 			System.out.println("no tasks");
 			System.out.println(marginalCost);
 			return (long) Math.round(bid);
@@ -154,7 +197,7 @@ public class AuctionAgent implements AuctionBehavior {
 
 		else {
 			marginalCost = getCostWithAddedTask(tasksWon, task, agent.vehicles());
-			bid = marginalCost + getAddedCost();
+			bid = marginalCost + computeMarginalBid();
 			System.out.println(bid);
 
 			// We suppose that the agent has the same vehicles as ours
@@ -221,5 +264,13 @@ public class AuctionAgent implements AuctionBehavior {
 			current = task.deliveryCity;
 		}
 		return plan;
+	}
+
+	public double getCumulatedCost() {
+		return cumulatedCost;
+	}
+
+	public void setCumulatedCost(double cumulatedCost) {
+		this.cumulatedCost = cumulatedCost;
 	}
 }
