@@ -3,6 +3,7 @@ package auction;
 //the list of imports
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -62,17 +63,18 @@ public class AuctionAgent implements AuctionBehavior {
 		Double actualBidOther;
 		System.out.println(new ArrayList(Arrays.asList(bids)));
 		if (winner == agent.id()) {
-			actualBidOther = Collections.min(Arrays.asList(bids));
+			
+			actualBidOther = (double)Collections.min(Arrays.asList(bids));
 			bidsByOther.add(actualBidOther);
 			marginByOther.add(actualBidOther-getCostOfOpponent(tasksWonByOther, vehicles));
 			tasksWon.add(previous);
-			Sls sls = new Sls(topology, distribution, agent);
-			Solution actualSolution = sls.getBestSolution(vehicles, tasksWon);
-			setCumulatedCost(getCost(tasksWon, vehicles, actualSolution));
+			Sls sls = new Sls(topology, distribution, tasksWon);
+			Solution actualSolution = sls.getBestSolution(vehicles);
+			setCumulatedCost(sls.getCost( vehicles, actualSolution));
 			currentCity = previous.deliveryCity;
 		} else {
 			tasksWonByOther.add(previous);
-			actualBidOther = Collections.max(Arrays.asList(bids));
+			actualBidOther = (double)Collections.max(Arrays.asList(bids));
 			bidsByOther.add(actualBidOther);
 			marginByOther.add(actualBidOther-getCostOfOpponent(tasksWonByOther, vehicles));
 		}
@@ -156,11 +158,11 @@ public class AuctionAgent implements AuctionBehavior {
 	 * @return 
 	 */
 	public double getCostWithAddedTask(Set<Task> tasks, Task task, List<Vehicle> vehicles) {
-		Sls slsOld = new Sls(topology, distribution, tasks);
 		Set<Task> eventuallyWonTasks = cloneTasks(tasks);
 		eventuallyWonTasks.add(task);
-		Solution myEventualSolution = sls.getBestSolution(vehicles, eventuallyWonTasks);
-		return sls.getCost(eventuallyWonTasks, vehicles, myEventualSolution)- cumulatedCost;
+		Sls slsNew = new Sls(topology, distribution, eventuallyWonTasks);
+		Solution myEventualSolution = slsNew.getBestSolution(vehicles);
+		return slsNew.getCost( vehicles, myEventualSolution)- cumulatedCost;
 	}
 
 	/**
