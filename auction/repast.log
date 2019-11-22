@@ -1,0 +1,9 @@
+Error displaying message
+java.lang.reflect.InvocationTargetException
+	at java.awt.EventQueue.invokeAndWait(EventQueue.java:1349)
+	at java.awt.EventQueue.invokeAndWait(EventQueue.java:1324)
+	at javax.swing.SwingUtilities.invokeAndWait(SwingUtilities.java:1353)
+	at uchicago.src.sim.gui.RepastConsole.copyOutputToConsole(Unknown Source)
+	at uchicago.src.sim.gui.RepastConsole.run(Unknown Source)
+	at java.lang.Thread.run(Thread.java:748)
+Caused by: java.lang.OutOfMemoryError: Java heap space

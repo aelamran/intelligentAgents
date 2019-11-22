@@ -47,14 +47,27 @@ public class Sls {
 
 
 	private Double COST_DIFFERENCE = 0.0;
+	private HashMap<Integer, Task> matching;
+	private Set<Task> tasks;
 
 	// Constructor without agent
-	public Sls(Topology topology, TaskDistribution distribution) {
-
-		
+	public Sls(Topology topology, TaskDistribution distribution, Set<Task> givenTasks) {	
 		this.topology = topology;
 		this.distribution = distribution;
-		
+		this.matching = new HashMap<Integer,Task>();
+		int counter = 0;
+		this.tasks = new HashSet<Task>();
+
+		for (Task t : givenTasks) {
+			Task newTask = new Task(counter, t.pickupCity, t.deliveryCity, t.reward, t.weight);
+			this.tasks.add(newTask);
+
+			matching.put(counter, t);
+			//System.out.println(t);
+			//System.out.println(newTask);
+			counter++;
+		}
+
 	}
 
 	public Sls(Topology topology, TaskDistribution distribution, Agent agent) {
@@ -71,7 +84,7 @@ public class Sls {
 	 * @param tasks
 	 * @return
 	 */
-	private Solution getClosestInitialSolution(List<Vehicle> myVehicles, Set<Task> tasks) {
+	private Solution getClosestInitialSolution(List<Vehicle> myVehicles) {
 		Integer numberVehicles = myVehicles.size();
 		Integer numberTasks = tasks.size();
 		ArrayList<Map.Entry<Integer, Task>> nextActions = initializeNextActions(2 * numberTasks + numberVehicles);
@@ -101,6 +114,7 @@ public class Sls {
 		Integer taskId;
 		int timeAction;
 		for (Task task : tasks) {
+			//System.out.println(task);
 			taskId = task.id;
 
 			minDistance = Double.MAX_VALUE;
@@ -116,6 +130,7 @@ public class Sls {
 
 				}
 			}
+
 			nextActions.set(LastActionIdMap.get(closestVehicleId), new SimpleEntry<Integer, Task>(taskId, task));
 			nextActions.set(taskId, new SimpleEntry<Integer, Task>(numberTasks + taskId, task));
 			nextActions.set(numberTasks + taskId, new SimpleEntry<Integer, Task>(null, task));
@@ -263,18 +278,37 @@ public class Sls {
 	 * @param id
 	 * @return
 	 */
-	public Task getTaskById(Set<Task> tasks, int id) {
+	public Task getOriginalTaskById( int id) {
 		if (id >= tasks.size()) {
 			id = id - tasks.size();
 		}
-		for (Task task : tasks) {
+		/*if (matching.get(id)==-1){
+			return null;
+		}*/
+		return matching.get(id);
+/*		for (Task task : this.tasks) {
+			Task newTask = matching.get(task.id);
+			if (newTask.id == id) {
+				return newTask;
+			}
+		}
+		return null;*/
+	}
+
+	public Task getDummyTaskById( int id) {
+		if (id >= tasks.size()) {
+			id = id - tasks.size();
+		}
+		/*if (matching.get(id)==-1){
+			return null;
+		}*/
+		for (Task task : this.tasks) {
 			if (task.id == id) {
 				return task;
 			}
 		}
 		return null;
 	}
-
 	/**
 	 * Transforms the solution to a plan first and returns its cost
 	 * @param tasks
@@ -282,11 +316,11 @@ public class Sls {
 	 * @param solution
 	 * @return
 	 */
-	public double getCost(Set<Task> tasks, List<Vehicle> myVehicles, Solution solution) {
-		return transformSolutionToPlans(tasks, myVehicles, solution).getValue();
+	public double getCost(List<Vehicle> myVehicles, Solution solution) {
+		return transformSolutionToPlans(myVehicles, solution).getValue();
 	}
 
-	public Map.Entry<List<Plan>, Double> transformSolutionToPlans(Set<Task> tasks, List<Vehicle> myVehicles,
+	public Map.Entry<List<Plan>, Double> transformSolutionToPlans( List<Vehicle> myVehicles,
 			Solution sol) {
 
 		List<Plan> plans = new ArrayList<Plan>();
@@ -320,11 +354,11 @@ public class Sls {
 
 				// If it's a pickup
 				if (actionId < sol.getNumberTasks()) {
-					plan.appendPickup(getTaskById(tasks, actionId));
+					plan.appendPickup(getOriginalTaskById(actionId));
 
 				} // If it's a delivery
 				else if (actionId < 2 * sol.getNumberTasks()) {
-					plan.appendDelivery(getTaskById(tasks, actionId - sol.getNumberTasks()));
+					plan.appendDelivery(getOriginalTaskById(actionId - sol.getNumberTasks()));
 
 				} else {
 					System.out.println("Error on index ");
@@ -386,7 +420,7 @@ public class Sls {
 	 * @param oldSolution
 	 * @return
 	 */
-	public HashSet<Solution> chooseNeighbors(List<Vehicle> myVehicles, Set<Task> tasks, Solution oldSolution) {
+	public HashSet<Solution> chooseNeighbors(List<Vehicle> myVehicles, Solution oldSolution) {
 		HashSet<Solution> neighbors = new HashSet<Solution>();
 		Integer numberOftasks = oldSolution.getNumberTasks();
 		Random r = new Random();
@@ -499,8 +533,8 @@ public class Sls {
 		int numberTasks = oldSolution.getNumberTasks();
 
 		// Get task i and j
-		Task taskI = ((ti < numberTasks) ? getTaskById(tasks, ti) : getTaskById(tasks, (ti - numberTasks)));
-		Task taskJ = ((tj < numberTasks) ? getTaskById(tasks, tj) : getTaskById(tasks, (tj - numberTasks)));
+		Task taskI = ((ti < numberTasks) ? getDummyTaskById( ti) : getDummyTaskById( (ti - numberTasks)));
+		Task taskJ = ((tj < numberTasks) ? getDummyTaskById( tj) : getDummyTaskById( (tj - numberTasks)));
 
 		Solution currentSolution = (Solution) (oldSolution.clone());
 
@@ -617,6 +651,9 @@ public class Sls {
 		correspondingDeliveryPosition = myActions
 				.indexOf(new SimpleEntry<Integer, Task>(pickedActionId + numberTasks, pickedTask));
 
+		if (correspondingDeliveryPosition==-1){
+			System.out.println("x");
+		}
 		Integer correspondingDeliveryActionId = myActions.get(correspondingDeliveryPosition).getKey();
 
 		Map.Entry<Integer, Task> currentAction = myActions.get(pickupPosition);
@@ -689,20 +726,20 @@ public class Sls {
 
 	}
 
-	public Solution getBestSolution(List<Vehicle> myVehicles, Set<Task> tasks){
-        Solution initialSolution = getClosestInitialSolution(myVehicles, tasks);
+	public Solution getBestSolution(List<Vehicle> myVehicles){
+        Solution initialSolution = getClosestInitialSolution(myVehicles);
 		Solution currentSolution = (Solution) (initialSolution.clone());
 		// Implementing the algorithm
 		int i = 0;
 		
 		Solution bestSolution = currentSolution.clone();
-		Double minCost = getCost(tasks, myVehicles, bestSolution);
-		double currentCost = getCost(tasks, myVehicles, currentSolution);
+		Double minCost = getCost( myVehicles, bestSolution);
+		double currentCost = getCost( myVehicles, currentSolution);
 		while (i < MAX_ITERATIONS) {
 			Solution oldSolution = currentSolution.clone();
-			HashSet<Solution> neighbors = chooseNeighbors(myVehicles, tasks, currentSolution);
-			currentSolution = localChoice(tasks, myVehicles, currentSolution, neighbors).clone();
-			currentCost = getCost(tasks, myVehicles, currentSolution);
+			HashSet<Solution> neighbors = chooseNeighbors(myVehicles, currentSolution);
+			currentSolution = localChoice( myVehicles, currentSolution, neighbors).clone();
+			currentCost = getCost( myVehicles, currentSolution);
 			
 			// Remember the best seen solution overall
 			if (currentCost < minCost ){
@@ -720,11 +757,11 @@ public class Sls {
 		System.out.println("min cost "+minCost);
 		return currentSolution;
     }
-	public List<Plan> plan(List<Vehicle> myVehicles, Set<Task> tasks) {
+	public List<Plan> plan(List<Vehicle> myVehicles) {
 		long time_start = System.currentTimeMillis();
         
-        Solution currentSolution = getBestSolution(myVehicles, tasks);
-		List<Plan> plans = transformSolutionToPlans(tasks, myVehicles, currentSolution).getKey();
+        Solution currentSolution = getBestSolution(myVehicles);
+		List<Plan> plans = transformSolutionToPlans( myVehicles, currentSolution).getKey();
 
 		long time_end = System.currentTimeMillis();
 		long duration = time_end - time_start;
@@ -745,15 +782,15 @@ public class Sls {
 	 * @param neighbors
 	 * @return
 	 */
-	private Solution localChoice(Set<Task> tasks, List<Vehicle> myVehicles, Solution oldSolution,
+	private Solution localChoice(List<Vehicle> myVehicles, Solution oldSolution,
 			HashSet<Solution> neighbors) {
 
-		double oldCost = getCost(tasks, myVehicles, oldSolution);
+		double oldCost = getCost( myVehicles, oldSolution);
 		System.out.println("old cost " + oldCost);
 		Solution newSol = oldSolution.clone();
 		double newCost;
 		for (Solution sol : neighbors) {
-			newCost = getCost(tasks, myVehicles, sol);
+			newCost = getCost(myVehicles, sol);
 
 			if (newCost < oldCost - COST_DIFFERENCE) {
 				newSol = sol;

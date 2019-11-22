@@ -116,17 +116,24 @@ public class AuctionAgent implements AuctionBehavior {
 	}
 
 	public double getCostWithAddedTask(Set<Task> tasks, Task task, List<Vehicle> vehicles) {
-		Sls sls = new Sls(topology, distribution, agent);
+		Sls slsOld = new Sls(topology, distribution, tasks);
 		Set<Task> eventuallyWonTasks = cloneTasks(tasks);
 		eventuallyWonTasks.add(task);
-		Solution myCurrentSolution = sls.getBestSolution(vehicles, tasksWon);
-		Solution myEventualSolution = sls.getBestSolution(vehicles, eventuallyWonTasks);
-		return sls.getCost(eventuallyWonTasks, vehicles, myEventualSolution)
-				- sls.getCost(tasksWon, vehicles, myCurrentSolution);
+
+		Sls slsNew = new Sls(topology, distribution, eventuallyWonTasks);
+		Solution myCurrentSolution = slsOld.getBestSolution(vehicles);
+		Solution myEventualSolution = slsNew.getBestSolution(vehicles);
+		return slsNew.getCost( vehicles, myEventualSolution)
+				- slsOld.getCost( vehicles, myCurrentSolution);
 	}
 
 	@Override
-	public Long askPrice(Task task) {
+	public Long askPrice(Task task){
+		Random r = new Random();
+		return (long)(r.nextDouble()*100);
+	}
+
+	public Long askPrice1(Task task) {
 		double marginalCost = 0.0;
 		double bid;
 
@@ -181,17 +188,22 @@ public class AuctionAgent implements AuctionBehavior {
 
 		// System.out.println("Agent " + agent.id() + " has tasks " + tasks);
 
-		Plan planVehicle1 = naivePlan(vehicle, tasks);
+		Sls sls = new Sls(topology, distribution, tasks);
+		List<Plan> plans = sls.plan(vehicles);
+		System.out.println(plans);
+		return plans;
+
+		/*Plan planVehicle1 = naivePlan(vehicle, tasks);
 
 		List<Plan> plans = new ArrayList<Plan>();
 		plans.add(planVehicle1);
 		while (plans.size() < vehicles.size())
 			plans.add(Plan.EMPTY);
 
-		return plans;
+		return plans;*/
 	}
 
-	private Set<Task> cloneTasks(Set<Task> tasks) {
+	public static Set<Task> cloneTasks(Set<Task> tasks) {
 		HashSet<Task> newTasks = new HashSet<Task>();
 		for (Task t : tasks) {
 			Task newTask = new Task(t.id, t.pickupCity, t.deliveryCity, t.reward, t.weight);
