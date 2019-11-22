@@ -126,7 +126,7 @@ public class AuctionAgent implements AuctionBehavior {
 		if(tasksWon.isEmpty() && tasksWonByOther.isEmpty()){
 			return 0;
 		}
-		
+
 
 
 		return 0.0;
@@ -156,7 +156,7 @@ public class AuctionAgent implements AuctionBehavior {
 	 * @return 
 	 */
 	public double getCostWithAddedTask(Set<Task> tasks, Task task, List<Vehicle> vehicles) {
-		Sls sls = new Sls(topology, distribution, agent);
+		Sls slsOld = new Sls(topology, distribution, tasks);
 		Set<Task> eventuallyWonTasks = cloneTasks(tasks);
 		eventuallyWonTasks.add(task);
 		Solution myEventualSolution = sls.getBestSolution(vehicles, eventuallyWonTasks);
@@ -169,7 +169,12 @@ public class AuctionAgent implements AuctionBehavior {
 	 * @return
 	 */
 	@Override
-	public Long askPrice(Task task) {
+	public Long askPrice(Task task){
+		Random r = new Random();
+		return (long)(r.nextDouble()*100);
+	}
+
+	public Long askPrice1(Task task) {
 		double marginalCost = 0.0;
 		double bid;
 
@@ -224,17 +229,22 @@ public class AuctionAgent implements AuctionBehavior {
 
 		// System.out.println("Agent " + agent.id() + " has tasks " + tasks);
 
-		Plan planVehicle1 = naivePlan(vehicle, tasks);
+		Sls sls = new Sls(topology, distribution, tasks);
+		List<Plan> plans = sls.plan(vehicles);
+		System.out.println(plans);
+		return plans;
+
+		/*Plan planVehicle1 = naivePlan(vehicle, tasks);
 
 		List<Plan> plans = new ArrayList<Plan>();
 		plans.add(planVehicle1);
 		while (plans.size() < vehicles.size())
 			plans.add(Plan.EMPTY);
 
-		return plans;
+		return plans;*/
 	}
 
-	private Set<Task> cloneTasks(Set<Task> tasks) {
+	public static Set<Task> cloneTasks(Set<Task> tasks) {
 		HashSet<Task> newTasks = new HashSet<Task>();
 		for (Task t : tasks) {
 			Task newTask = new Task(t.id, t.pickupCity, t.deliveryCity, t.reward, t.weight);
