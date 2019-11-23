@@ -67,7 +67,9 @@ public class AuctionTemplate implements AuctionBehavior {
 				* vehicle.costPerKm());
 
 		double ratio = 1.0 + (random.nextDouble() * 0.05 * task.id);
+
 		double bid = ratio * marginalCost;
+		//double bid = marginalCost + 100.0;
 
 		System.out.println(bid);
 		return (long) Math.round(bid);

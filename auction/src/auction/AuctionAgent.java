@@ -35,12 +35,15 @@ public class AuctionAgent implements AuctionBehavior {
 	private Vehicle vehicle;
 	private List<Vehicle> vehicles;
 	private double cumulatedCost;
+	private double cumulatedCostOfOther;
 
 	private City currentCity;
 	private Set<Task> tasksWon;
 	private Set<Task> tasksWonByOther;
 	private ArrayList<Double> bidsByOther;
 	private ArrayList<Double> marginByOther;
+	private int roundNumber = 0;
+	private ArrayList<Double> costByOther;
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
@@ -53,6 +56,11 @@ public class AuctionAgent implements AuctionBehavior {
 		this.tasksWonByOther = new HashSet();
 		this.vehicles = agent.vehicles();
 		this.currentCity = vehicle.homeCity();
+		this.bidsByOther = new ArrayList<Double>();
+		this.marginByOther = new ArrayList<Double>();
+		this.costByOther = new ArrayList<Double>();
+		this.cumulatedCost = 0.0;
+		this.cumulatedCostOfOther = 0.0;
 
 		long seed = -9019554669489983951L * currentCity.hashCode() * agent.id();
 		this.random = new Random(seed);
@@ -60,28 +68,40 @@ public class AuctionAgent implements AuctionBehavior {
 
 	@Override
 	public void auctionResult(Task previous, int winner, Long[] bids) {
+
 		Double actualBidOther;
 		System.out.println(new ArrayList(Arrays.asList(bids)));
+		costByOther.add(getCostOfOpponent(previous, vehicles));
 		if (winner == agent.id()) {
-			
-			actualBidOther = (double)Collections.max(Arrays.asList(bids));
+			System.out.println("I won");
+			actualBidOther = (double) Collections.max(Arrays.asList(bids));
 			bidsByOther.add(actualBidOther);
-			marginByOther.add(actualBidOther-getCostOfOpponent(previous, vehicles));
+			marginByOther.add(actualBidOther - getCostOfOpponent(previous, vehicles));
 			tasksWon.add(previous);
+
 			Sls sls = new Sls(topology, distribution, tasksWon);
 			Solution actualSolution = sls.getBestSolution(vehicles);
-			setCumulatedCost(sls.getCost( vehicles, actualSolution));
+			setCumulatedCost(sls.getCost(vehicles, actualSolution));
 			currentCity = previous.deliveryCity;
 		} else {
-			actualBidOther = (double)Collections.min(Arrays.asList(bids));
+			System.out.println("They won");
+
+			actualBidOther = (double) Collections.min(Arrays.asList(bids));
 			bidsByOther.add(actualBidOther);
-			marginByOther.add(actualBidOther-getCostOfOpponent(previous, vehicles));
+			marginByOther.add(actualBidOther - getCostOfOpponent(previous, vehicles));
 			tasksWonByOther.add(previous);
+
+			Sls sls = new Sls(topology, distribution, tasksWonByOther);
+			Solution actualSolution = sls.getBestSolution(vehicles);
+			setCumulatedCostOfOther(sls.getCost(vehicles, actualSolution));
+
 		}
+		roundNumber++;
 	}
 
 	/**
 	 * Checks if no tasks have been won
+	 * 
 	 * @return
 	 */
 	public boolean noTasks() {
@@ -100,6 +120,7 @@ public class AuctionAgent implements AuctionBehavior {
 
 	/**
 	 * get the cost of the first task of a vehicle
+	 * 
 	 * @param task
 	 * @param vehicles
 	 * @return
@@ -122,14 +143,13 @@ public class AuctionAgent implements AuctionBehavior {
 
 	/**
 	 * Computes the bid added to the cost
+	 * 
 	 * @return
 	 */
 	public double computeMarginalBid() {
-		if(tasksWon.isEmpty() && tasksWonByOther.isEmpty()){
+		if (tasksWon.isEmpty() && tasksWonByOther.isEmpty()) {
 			return 0;
 		}
-
-
 
 		return 0.0;
 	}
@@ -140,33 +160,33 @@ public class AuctionAgent implements AuctionBehavior {
 	 * @return
 	 */
 	public double getCostOfOpponent(Task task, List<Vehicle> vehicles) {
-		if (tasksWonByOther.isEmpty()){
+		if (tasksWonByOther.isEmpty()) {
 			return getCostOfTask(task, vehicles);
-		}
-		else{
-			return getCostWithAddedTask(tasksWonByOther, task, vehicles);
+		} else {
+			return getCostWithAddedTask(tasksWonByOther, task, vehicles, cumulatedCostOfOther);
 		}
 
 	}
 
-
-	/** computes marginal cost of adding a task to an existing taskSet
+	/**
+	 * computes marginal cost of adding a task to an existing taskSet
 	 * 
 	 * @param tasks
 	 * @param task
 	 * @param vehicles
-	 * @return 
+	 * @return
 	 */
-	public double getCostWithAddedTask(Set<Task> tasks, Task task, List<Vehicle> vehicles) {
+	public double getCostWithAddedTask(Set<Task> tasks, Task task, List<Vehicle> vehicles, double cost) {
 		Set<Task> eventuallyWonTasks = cloneTasks(tasks);
 		eventuallyWonTasks.add(task);
 		Sls slsNew = new Sls(topology, distribution, eventuallyWonTasks);
 		Solution myEventualSolution = slsNew.getBestSolution(vehicles);
-		return slsNew.getCost( vehicles, myEventualSolution)- cumulatedCost;
+		return slsNew.getCost(vehicles, myEventualSolution) - cost;
 	}
 
 	/**
 	 * Computes the bid
+	 * 
 	 * @param task
 	 * @return
 	 */
@@ -195,15 +215,50 @@ public class AuctionAgent implements AuctionBehavior {
 			System.out.println("no tasks");
 			System.out.println(marginalCost);
 			return (long) Math.round(bid);
-		}
-
-		else {
-			marginalCost = getCostWithAddedTask(tasksWon, task, agent.vehicles());
+		} else if (roundNumber < 3) {
+			marginalCost = getCostWithAddedTask(tasksWon, task, agent.vehicles(), cumulatedCost);
+			bid = marginalCost + computeMarginalBid();
+			return (long) Math.round(bid);
+		} else {
+			marginalCost = getCostWithAddedTask(tasksWon, task, agent.vehicles(), cumulatedCost);
 			bid = marginalCost + computeMarginalBid();
 			System.out.println(bid);
 
 			// We suppose that the agent has the same vehicles as ours
+			// double meanOfMargin = getMeanOfMargin();
+
+			LinearRegression linReg = new LinearRegression(costByOther.toArray(new Double[costByOther.size()]),
+					bidsByOther.toArray(new Double[bidsByOther.size()]));
 			double costOfOpponent = getCostOfOpponent(task, agent.vehicles());
+			if (costOfOpponent < 0) {
+				System.out.println("negative");
+			}
+			double otherBid = linReg.predict(costOfOpponent);
+
+			System.out.println("intercept stderr" + linReg.interceptStdErr());
+			System.out.println("slope stderr" + linReg.slopeStdErr());
+
+			double lowestBidOfOther = costOfOpponent * (linReg.slope() - linReg.slopeStdErr()) + linReg.intercept();// -linReg.interceptStdErr();
+
+			double highestBidOfOther = costOfOpponent * (linReg.slope() + linReg.slopeStdErr()) + linReg.intercept();// +
+																														// linReg.interceptStdErr();
+
+			if (marginalCost < lowestBidOfOther) {
+				if (lowestBidOfOther /  otherBid >= 0.9) {
+					if (marginalCost  > lowestBidOfOther* 0.9){
+						bid = (marginalCost + lowestBidOfOther) / 2.0;
+					}else{
+						bid = lowestBidOfOther * 0.9;
+					}
+				}
+				else{
+					bid = lowestBidOfOther;
+				}
+			} else {
+				// TODO : future maybe?
+				bid = marginalCost;
+			}
+
 			System.out.println(costOfOpponent);
 			return (long) Math.round(bid);
 			/*
@@ -224,21 +279,21 @@ public class AuctionAgent implements AuctionBehavior {
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 
-		// System.out.println("Agent " + agent.id() + " has tasks " + tasks);
+		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
 
 		Sls sls = new Sls(topology, distribution, tasks);
 		List<Plan> plans = sls.plan(vehicles);
 		System.out.println(plans);
 		return plans;
 
-		/*Plan planVehicle1 = naivePlan(vehicle, tasks);
-
-		List<Plan> plans = new ArrayList<Plan>();
-		plans.add(planVehicle1);
-		while (plans.size() < vehicles.size())
-			plans.add(Plan.EMPTY);
-
-		return plans;*/
+		/*
+		 * Plan planVehicle1 = naivePlan(vehicle, tasks);
+		 * 
+		 * List<Plan> plans = new ArrayList<Plan>(); plans.add(planVehicle1); while
+		 * (plans.size() < vehicles.size()) plans.add(Plan.EMPTY);
+		 * 
+		 * return plans;
+		 */
 	}
 
 	public static Set<Task> cloneTasks(Set<Task> tasks) {
@@ -279,5 +334,13 @@ public class AuctionAgent implements AuctionBehavior {
 
 	public void setCumulatedCost(double cumulatedCost) {
 		this.cumulatedCost = cumulatedCost;
+	}
+
+	public double getCumulatedCostOfOther() {
+		return cumulatedCostOfOther;
+	}
+
+	public void setCumulatedCostOfOther(double cumulatedCostOfOther) {
+		this.cumulatedCostOfOther = cumulatedCostOfOther;
 	}
 }

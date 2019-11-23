@@ -477,10 +477,7 @@ public class Sls {
 				}
 			}
 		}
-		if (neighbors.isEmpty()) {
-			System.out.println("empty");
-		}
-
+		
 		return neighbors;
 
 	}
@@ -786,7 +783,7 @@ public class Sls {
 			HashSet<Solution> neighbors) {
 
 		double oldCost = getCost( myVehicles, oldSolution);
-		System.out.println("old cost " + oldCost);
+		//System.out.println("old cost " + oldCost);
 		Solution newSol = oldSolution.clone();
 		double newCost;
 		for (Solution sol : neighbors) {
@@ -806,7 +803,6 @@ public class Sls {
 		} else if (proba < TRESHOLD_OLD_SOL + TRESHOLD_OTHER_NEIGHBOR) {
 			// Choose random
 			if (neighbors.isEmpty()) {
-				System.out.println("empty");
 				return oldSolution;
 			}
 			int index = r.nextInt(neighbors.size());
