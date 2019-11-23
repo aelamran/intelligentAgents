@@ -66,17 +66,18 @@ public class AuctionAgent implements AuctionBehavior {
 			
 			actualBidOther = (double)Collections.min(Arrays.asList(bids));
 			bidsByOther.add(actualBidOther);
-			marginByOther.add(actualBidOther-getCostOfOpponent(tasksWonByOther, vehicles));
+			marginByOther.add(actualBidOther-getCostOfOpponent(previous, vehicles));
 			tasksWon.add(previous);
 			Sls sls = new Sls(topology, distribution, tasksWon);
 			Solution actualSolution = sls.getBestSolution(vehicles);
 			setCumulatedCost(sls.getCost( vehicles, actualSolution));
 			currentCity = previous.deliveryCity;
 		} else {
-			tasksWonByOther.add(previous);
 			actualBidOther = (double)Collections.max(Arrays.asList(bids));
 			bidsByOther.add(actualBidOther);
-			marginByOther.add(actualBidOther-getCostOfOpponent(tasksWonByOther, vehicles));
+			marginByOther.add(actualBidOther-getCostOfOpponent(previous, vehicles));
+			tasksWonByOther.add(previous);
+
 		}
 	}
 
