@@ -3,7 +3,7 @@
 <agents>
 	<!-- An auto-generated list of agents and their behavior classes -->
 	<!--  - jar directory : ./auction/ -->
-	<!--  - generated on  : Fri Nov 22 19:42:42 CET 2019 -->
+	<!--  - generated on  : Fri Nov 22 20:16:47 CET 2019 -->
 	<agent name="auction">
 		<set class-path="./auction/auction.jar"/>
 		<set class-name="auction.AuctionAgent"/>
@@ -11,9 +11,5 @@
 	<agent name="auction2">
 		<set class-path="./auction/auction.jar"/>
 		<set class-name="template.AuctionTemplate"/>
-	</agent>
-	<agent name="auction3">
-		<set class-path="./auction/auction.jar"/>
-		<set class-name="logist.behavior.AuctionBehavior"/>
 	</agent>
 </agents>

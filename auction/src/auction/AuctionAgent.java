@@ -64,19 +64,19 @@ public class AuctionAgent implements AuctionBehavior {
 		System.out.println(new ArrayList(Arrays.asList(bids)));
 		if (winner == agent.id()) {
 			
-			actualBidOther = (double)Collections.min(Arrays.asList(bids));
+			actualBidOther = (double)Collections.max(Arrays.asList(bids));
 			bidsByOther.add(actualBidOther);
-			marginByOther.add(actualBidOther-getCostOfOpponent(tasksWonByOther, vehicles));
+			marginByOther.add(actualBidOther-getCostOfOpponent(previous, vehicles));
 			tasksWon.add(previous);
 			Sls sls = new Sls(topology, distribution, tasksWon);
 			Solution actualSolution = sls.getBestSolution(vehicles);
 			setCumulatedCost(sls.getCost( vehicles, actualSolution));
 			currentCity = previous.deliveryCity;
 		} else {
-			tasksWonByOther.add(previous);
-			actualBidOther = (double)Collections.max(Arrays.asList(bids));
+			actualBidOther = (double)Collections.min(Arrays.asList(bids));
 			bidsByOther.add(actualBidOther);
-			marginByOther.add(actualBidOther-getCostOfOpponent(tasksWonByOther, vehicles));
+			marginByOther.add(actualBidOther-getCostOfOpponent(previous, vehicles));
+			tasksWonByOther.add(previous);
 		}
 	}
 
@@ -171,12 +171,7 @@ public class AuctionAgent implements AuctionBehavior {
 	 * @return
 	 */
 	@Override
-	public Long askPrice(Task task){
-		Random r = new Random();
-		return (long)(r.nextDouble()*100);
-	}
-
-	public Long askPrice1(Task task) {
+	public Long askPrice(Task task) {
 		double marginalCost = 0.0;
 		double bid;
 
