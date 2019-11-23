@@ -256,6 +256,8 @@ public class AuctionAgent implements AuctionBehavior {
 				}
 			} else {
 				// TODO : future maybe?
+
+				
 				bid = marginalCost;
 			}
 
