@@ -65,8 +65,6 @@ public class Sls {
 			this.tasks.add(newTask);
 
 			matching.put(counter, t);
-			//System.out.println(t);
-			//System.out.println(newTask);
 			counter++;
 		}
 		this.time_out = time_out;
@@ -118,7 +116,6 @@ public class Sls {
 		Integer taskId;
 		int timeAction;
 		for (Task task : tasks) {
-			//System.out.println(task);
 			taskId = task.id;
 
 			minDistance = Double.MAX_VALUE;
@@ -576,8 +573,6 @@ public class Sls {
 			nextActions.set(tj, afterTi);
 			if (beforeTi >= 0) {
 				nextActions.set(beforeTi, new SimpleEntry<Integer, Task>(tj, taskJ));
-			} else {
-				System.out.println("before");
 			}
 			nextActions.set(beforeTj, new SimpleEntry<Integer, Task>(ti, taskI));
 
@@ -652,9 +647,6 @@ public class Sls {
 		correspondingDeliveryPosition = myActions
 				.indexOf(new SimpleEntry<Integer, Task>(pickedActionId + numberTasks, pickedTask));
 
-		if (correspondingDeliveryPosition==-1){
-			System.out.println("x");
-		}
 		Integer correspondingDeliveryActionId = myActions.get(correspondingDeliveryPosition).getKey();
 
 		Map.Entry<Integer, Task> currentAction = myActions.get(pickupPosition);
@@ -765,9 +757,7 @@ public class Sls {
 		long time_end = System.currentTimeMillis();
 		long duration = time_end - time_start;
 		System.out.println("The plan was generated in " + duration + " milliseconds.");
-		for (int vi = 0; vi < myVehicles.size(); vi++) {
-			System.out.println(getActionsOfVehicle(currentSolution, vi));
-		}
+		
 		return plans;
 	}
 	
@@ -785,7 +775,6 @@ public class Sls {
 			HashSet<Solution> neighbors) {
 
 		double oldCost = getCost( myVehicles, oldSolution);
-		//System.out.println("old cost " + oldCost);
 		Solution newSol = oldSolution.clone();
 		double newCost;
 		for (Solution sol : neighbors) {

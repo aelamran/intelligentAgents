@@ -104,11 +104,9 @@ public class AuctionAgent implements AuctionBehavior {
 	public void auctionResult(Task previous, int winner, Long[] bids) {
 
 		Double actualBidOther;
-		System.out.println(new ArrayList(Arrays.asList(bids)));
 
 		boolean otherBidNull = otherBidNull(bids);
 		if (winner == agent.id()) {
-			System.out.println("I won");
 			if (!otherBidNull) {
 				actualBidOther = (double) Collections.max(Arrays.asList(bids));
 				bidsByOther.add(actualBidOther);
@@ -123,7 +121,6 @@ public class AuctionAgent implements AuctionBehavior {
 			setCumulatedCost(sls.getCost(vehicles, actualSolution));
 			currentCity = previous.deliveryCity;
 		} else {
-			System.out.println("They won");
 			if (!otherBidNull) {
 				actualBidOther = (double) Collections.min(Arrays.asList(bids));
 				bidsByOther.add(actualBidOther);
@@ -203,6 +200,7 @@ public class AuctionAgent implements AuctionBehavior {
 	 * @return
 	 */
 	public double getCostOfOpponent(Task task, List<Vehicle> vehicles) {
+		//vehicles.get(0).homeCity() = 
 		if (tasksWonByOther.isEmpty()) {
 			return getCostOfTask(task, vehicles);
 		} else {
@@ -252,12 +250,7 @@ public class AuctionAgent implements AuctionBehavior {
 		}
 		// Now we have checked that the task can fit
 
-		// If it's the first task
-		/*
-		 * if (noTasks()) { marginalCost = getCostOfTask(task, agent.vehicles()); bid =
-		 * marginalCost + computeMarginalBid(); System.out.println("no tasks");
-		 * System.out.println(marginalCost); return (long) Math.round(bid); } else
-		 */
+		
 		if (roundNumber < firstSteps || bidsByOther.isEmpty()) {
 			marginalCost = getCostWithAddedTask(tasksWon, task, agent.vehicles(), cumulatedCost);
 			bid = marginalCost + computeMarginalBid();
@@ -268,23 +261,18 @@ public class AuctionAgent implements AuctionBehavior {
 		} else {
 			marginalCost = getCostWithAddedTask(tasksWon, task, agent.vehicles(), cumulatedCost);
 			bid = marginalCost + computeMarginalBid();
-			System.out.println(bid);
 
 			// We suppose that the agent has the same vehicles as ours
-			// double meanOfMargin = getMeanOfMargin();
 
 			LinearRegression linReg = new LinearRegression(costByOther.toArray(new Double[costByOther.size()]),
 					bidsByOther.toArray(new Double[bidsByOther.size()]));
 			double costOfOpponent = getCostOfOpponent(task, agent.vehicles());
 			if (costOfOpponent < 0) {
 				costOfOpponent = 0.0;
-				System.out.println("negative");
 			}
 			double otherBid = linReg.predict(costOfOpponent);
 
-			System.out.println("intercept stderr" + linReg.interceptStdErr());
-			System.out.println("slope stderr" + linReg.slopeStdErr());
-
+		
 			double lowestBidOfOther = costOfOpponent * (linReg.slope() - linReg.slopeStdErr()) + linReg.intercept();// -linReg.interceptStdErr();
 
 			double highestBidOfOther = costOfOpponent * (linReg.slope() + linReg.slopeStdErr()) + linReg.intercept();// +
@@ -334,25 +322,10 @@ public class AuctionAgent implements AuctionBehavior {
 				}
 			}
 
-			System.out.println(costOfOpponent);
-			/*
-			 * if (bid <= 0) { bid = marginalCost; }
-			 */
 
 			return (long) Math.round(bid);
 
-			/*
-			 * if (vehicle.capacity() < task.weight) return null;
-			 * 
-			 * long distanceTask = task.pickupCity.distanceUnitsTo(task.deliveryCity); long
-			 * distanceSum = distanceTask + currentCity.distanceUnitsTo(task.pickupCity);
-			 * marginalCost = Measures.unitsToKM(distanceSum * vehicle.costPerKm());
-			 * 
-			 * double ratio = 1.0 + (random.nextDouble() * 0.05 * task.id); bid = ratio *
-			 * marginalCost;
-			 * 
-			 * System.out.println(bid); return (long) Math.round(bid);
-			 */
+			
 		}
 	}
 
@@ -376,11 +349,9 @@ public class AuctionAgent implements AuctionBehavior {
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 
-		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
 
 		Sls sls = new Sls(topology, distribution, tasks, timeout_plan, System.currentTimeMillis());
 		List<Plan> plans = sls.plan(vehicles);
-		System.out.println(plans);
 		for (Plan p : plans) {
 			System.out.println("plan x distance " + p.totalDistance() * 5);
 

@@ -69,8 +69,8 @@ public class AuctionTemplate implements AuctionBehavior {
 		// double bid = marginalCost + 100.0;
 		//bid = 200;
 		System.out.println(bid);
-		return null;
-		//return (long) Math.round(bid);
+		//return null;
+		return (long) Math.round(bid);
 	}
 
 	@Override
