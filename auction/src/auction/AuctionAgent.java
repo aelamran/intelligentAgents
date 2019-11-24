@@ -130,15 +130,16 @@ public class AuctionAgent implements AuctionBehavior {
 	public boolean noTasks() {
 		if (!tasksWon.isEmpty()) {
 			return false;
+		} else if (!tasksWonByOther.isEmpty()) {
+			return false;
 		}
-		boolean noTasks = true;
-		for (Vehicle v : agent.vehicles()) {
-			if (!v.getCurrentTasks().isEmpty()) {
-				noTasks = false;
-			}
-		}
-
-		return noTasks;
+		return true;
+		/*
+		 * boolean noTasks = true; for (Vehicle v : agent.vehicles()) { if
+		 * (!v.getCurrentTasks().isEmpty()) { noTasks = false; } }
+		 * 
+		 * return noTasks;
+		 */
 	}
 
 	/**
@@ -233,13 +234,12 @@ public class AuctionAgent implements AuctionBehavior {
 		// Now we have checked that the task can fit
 
 		// If it's the first task
-		if (noTasks()) {
-			marginalCost = getCostOfTask(task, agent.vehicles());
-			bid = marginalCost + computeMarginalBid();
-			System.out.println("no tasks");
-			System.out.println(marginalCost);
-			return (long) Math.round(bid);
-		} else if (roundNumber < firstSteps) {
+		/*
+		 * if (noTasks()) { marginalCost = getCostOfTask(task, agent.vehicles()); bid =
+		 * marginalCost + computeMarginalBid(); System.out.println("no tasks");
+		 * System.out.println(marginalCost); return (long) Math.round(bid); } else
+		 */
+		if (roundNumber < firstSteps) {
 			marginalCost = getCostWithAddedTask(tasksWon, task, agent.vehicles(), cumulatedCost);
 			bid = marginalCost + computeMarginalBid();
 			return (long) Math.round(bid);
@@ -280,13 +280,18 @@ public class AuctionAgent implements AuctionBehavior {
 				}
 			} else {
 				// TODO : future maybe?
-				int maxId = Collections.max(tasksWon, new Comparator<Task>() {
-					@Override
-					public int compare(Task t1, Task t2) {
+				int maxId;
+				if (tasksWon.isEmpty()) {
+					maxId = 1;
+				} else {
+					maxId = Collections.max(tasksWon, new Comparator<Task>() {
+						@Override
+						public int compare(Task t1, Task t2) {
 
-						return new Integer(t1.id).compareTo(t2.id);
-					}
-				}).id + 1;
+							return new Integer(t1.id).compareTo(t2.id);
+						}
+					}).id + 1;
+				}
 				Task probableTask = getMostProbableTask(maxId);
 
 				// Adding the most probable task
@@ -301,16 +306,16 @@ public class AuctionAgent implements AuctionBehavior {
 						slsNew.getCost(vehicles, myEventualSolution));
 
 				if (addedCost <= 0.0) {
-					bid = marginalCost + addedCost;
+					bid = (marginalCost + addedCost) * 0.5;
 				} else {
-					bid = marginalCost;
+					bid = (marginalCost + lowestBidOfOther) / 2;
 				}
 			}
 
 			System.out.println(costOfOpponent);
-			/*if (bid <= 0) {
-				bid = marginalCost;
-			}*/
+			/*
+			 * if (bid <= 0) { bid = marginalCost; }
+			 */
 
 			return (long) Math.round(bid);
 

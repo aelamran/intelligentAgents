@@ -70,7 +70,7 @@ public class AuctionTemplate implements AuctionBehavior {
 
 		double bid = ratio * marginalCost;
 		//double bid = marginalCost + 100.0;
-		//bid = 600;
+		bid = 200;
 		System.out.println(bid);
 		return (long) Math.round(bid);
 	}
