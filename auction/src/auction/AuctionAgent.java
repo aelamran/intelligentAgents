@@ -50,6 +50,7 @@ public class AuctionAgent implements AuctionBehavior {
 	private Set<Task> tasksWonByOther;
 	private ArrayList<Double> bidsByOther;
 	private ArrayList<Double> marginByOther;
+	private int firstSteps = 10;
 	private int roundNumber = 0;
 	private ArrayList<Double> costByOther;
 	private long time_start_bid;
@@ -238,7 +239,7 @@ public class AuctionAgent implements AuctionBehavior {
 			System.out.println("no tasks");
 			System.out.println(marginalCost);
 			return (long) Math.round(bid);
-		} else if (roundNumber < 3) {
+		} else if (roundNumber < firstSteps) {
 			marginalCost = getCostWithAddedTask(tasksWon, task, agent.vehicles(), cumulatedCost);
 			bid = marginalCost + computeMarginalBid();
 			return (long) Math.round(bid);
