@@ -1,16 +1,20 @@
 package auction;
 
+import java.io.File;
 //the list of imports
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
 
+import logist.LogistSettings;
 import logist.Measures;
 import logist.behavior.AuctionBehavior;
+import logist.config.Parsers;
 import logist.agent.Agent;
 import logist.simulation.Vehicle;
 import logist.plan.Plan;
@@ -37,6 +41,10 @@ public class AuctionAgent implements AuctionBehavior {
 	private double cumulatedCost;
 	private double cumulatedCostOfOther;
 
+	public static long timeout_plan;
+	private long timeout_bid;
+	private long timeout_setup;
+
 	private City currentCity;
 	private Set<Task> tasksWon;
 	private Set<Task> tasksWonByOther;
@@ -44,9 +52,18 @@ public class AuctionAgent implements AuctionBehavior {
 	private ArrayList<Double> marginByOther;
 	private int roundNumber = 0;
 	private ArrayList<Double> costByOther;
+	private long time_start_bid;
 
 	@Override
 	public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
+
+		// this code is used to get the timeouts
+		LogistSettings ls = null;
+		try {
+			ls = Parsers.parseSettings("config" + File.separator + "settings_auction.xml");
+		} catch (Exception exc) {
+			System.out.println("There was a problem loading the configuration file.");
+		}
 
 		this.topology = topology;
 		this.distribution = distribution;
@@ -64,6 +81,11 @@ public class AuctionAgent implements AuctionBehavior {
 
 		long seed = -9019554669489983951L * currentCity.hashCode() * agent.id();
 		this.random = new Random(seed);
+
+		// the plan method cannot execute more than timeout_plan milliseconds
+		timeout_plan = ls.get(LogistSettings.TimeoutKey.PLAN);
+		timeout_bid = ls.get(LogistSettings.TimeoutKey.BID);
+		timeout_setup = ls.get(LogistSettings.TimeoutKey.SETUP);
 	}
 
 	@Override
@@ -79,7 +101,7 @@ public class AuctionAgent implements AuctionBehavior {
 			marginByOther.add(actualBidOther - getCostOfOpponent(previous, vehicles));
 			tasksWon.add(previous);
 
-			Sls sls = new Sls(topology, distribution, tasksWon);
+			Sls sls = new Sls(topology, distribution, tasksWon, timeout_bid, time_start_bid);
 			Solution actualSolution = sls.getBestSolution(vehicles);
 			setCumulatedCost(sls.getCost(vehicles, actualSolution));
 			currentCity = previous.deliveryCity;
@@ -91,7 +113,7 @@ public class AuctionAgent implements AuctionBehavior {
 			marginByOther.add(actualBidOther - getCostOfOpponent(previous, vehicles));
 			tasksWonByOther.add(previous);
 
-			Sls sls = new Sls(topology, distribution, tasksWonByOther);
+			Sls sls = new Sls(topology, distribution, tasksWonByOther, timeout_bid, time_start_bid);
 			Solution actualSolution = sls.getBestSolution(vehicles);
 			setCumulatedCostOfOther(sls.getCost(vehicles, actualSolution));
 
@@ -179,7 +201,7 @@ public class AuctionAgent implements AuctionBehavior {
 	public double getCostWithAddedTask(Set<Task> tasks, Task task, List<Vehicle> vehicles, double cost) {
 		Set<Task> eventuallyWonTasks = cloneTasks(tasks);
 		eventuallyWonTasks.add(task);
-		Sls slsNew = new Sls(topology, distribution, eventuallyWonTasks);
+		Sls slsNew = new Sls(topology, distribution, eventuallyWonTasks, timeout_bid, time_start_bid);
 		Solution myEventualSolution = slsNew.getBestSolution(vehicles);
 		return slsNew.getCost(vehicles, myEventualSolution) - cost;
 	}
@@ -192,6 +214,7 @@ public class AuctionAgent implements AuctionBehavior {
 	 */
 	@Override
 	public Long askPrice(Task task) {
+		this.time_start_bid = System.currentTimeMillis();
 		double marginalCost = 0.0;
 		double bid;
 
@@ -231,6 +254,7 @@ public class AuctionAgent implements AuctionBehavior {
 					bidsByOther.toArray(new Double[bidsByOther.size()]));
 			double costOfOpponent = getCostOfOpponent(task, agent.vehicles());
 			if (costOfOpponent < 0) {
+				costOfOpponent = 0.0;
 				System.out.println("negative");
 			}
 			double otherBid = linReg.predict(costOfOpponent);
@@ -244,21 +268,42 @@ public class AuctionAgent implements AuctionBehavior {
 																														// linReg.interceptStdErr();
 
 			if (marginalCost < lowestBidOfOther) {
-				if (lowestBidOfOther /  otherBid >= 0.9) {
-					if (marginalCost  > lowestBidOfOther* 0.9){
+				if (lowestBidOfOther / otherBid >= 0.9) {
+					if (marginalCost > lowestBidOfOther * 0.9) {
 						bid = (marginalCost + lowestBidOfOther) / 2.0;
-					}else{
+					} else {
 						bid = lowestBidOfOther * 0.9;
 					}
-				}
-				else{
+				} else {
 					bid = lowestBidOfOther;
 				}
 			} else {
 				// TODO : future maybe?
+				int maxId = Collections.max(tasksWon, new Comparator<Task>() {
+					@Override
+					public int compare(Task t1, Task t2) {
 
-				
-				bid = marginalCost;
+						return new Integer(t1.id).compareTo(t2.id);
+					}
+				}).id + 1;
+				Task probableTask = getMostProbableTask(maxId);
+
+				// Adding the most probable task
+				Set<Task> eventuallyWonTasks = cloneTasks(tasksWon);
+				eventuallyWonTasks.add(probableTask);
+
+				Sls slsNew = new Sls(topology, distribution, eventuallyWonTasks, timeout_bid, time_start_bid);
+				Solution myEventualSolution = slsNew.getBestSolution(vehicles);
+
+				// Estimate difference of cost with and without current task
+				double addedCost = getCostWithAddedTask(eventuallyWonTasks, task, vehicles,
+						slsNew.getCost(vehicles, myEventualSolution));
+
+				if (addedCost <= 0.0) {
+					bid = marginalCost + addedCost;
+				} else {
+					bid = marginalCost;
+				}
 			}
 
 			System.out.println(costOfOpponent);
@@ -278,14 +323,36 @@ public class AuctionAgent implements AuctionBehavior {
 		}
 	}
 
+	private Task getMostProbableTask(int id) {
+		double maxProba = 0.0;
+		Task mostProbableTask = null;
+		for (City from : topology.cities()) {
+			for (City to : topology.cities()) {
+				double proba = distribution.probability(from, to);
+				if (maxProba < proba) {
+					maxProba = proba;
+					mostProbableTask = new Task(id, from, to, distribution.reward(from, to),
+							distribution.weight(from, to));
+				}
+			}
+		}
+
+		return mostProbableTask;
+	}
+
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
 
 		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
 
-		Sls sls = new Sls(topology, distribution, tasks);
+		Sls sls = new Sls(topology, distribution, tasks, timeout_plan, System.currentTimeMillis());
 		List<Plan> plans = sls.plan(vehicles);
 		System.out.println(plans);
+		for (Plan p : plans) {
+			System.out.println(p.totalDistance() * 5);
+
+		}
+		System.out.println(tasks.rewardSum());
 		return plans;
 
 		/*
@@ -327,6 +394,7 @@ public class AuctionAgent implements AuctionBehavior {
 			// set current city
 			current = task.deliveryCity;
 		}
+
 		return plan;
 	}
 

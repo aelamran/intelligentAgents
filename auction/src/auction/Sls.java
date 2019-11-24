@@ -49,9 +49,11 @@ public class Sls {
 	private Double COST_DIFFERENCE = 0.0;
 	private HashMap<Integer, Task> matching;
 	private Set<Task> tasks;
+	private long time_out;
+	private long time_start;
 
 	// Constructor without agent
-	public Sls(Topology topology, TaskDistribution distribution, Set<Task> givenTasks) {	
+	public Sls(Topology topology, TaskDistribution distribution, Set<Task> givenTasks, long time_out, long time_start) {	
 		this.topology = topology;
 		this.distribution = distribution;
 		this.matching = new HashMap<Integer,Task>();
@@ -67,6 +69,8 @@ public class Sls {
 			//System.out.println(newTask);
 			counter++;
 		}
+		this.time_out = time_out;
+		this.time_start = time_start;
 
 	}
 
@@ -732,7 +736,7 @@ public class Sls {
 		Solution bestSolution = currentSolution.clone();
 		Double minCost = getCost( myVehicles, bestSolution);
 		double currentCost = getCost( myVehicles, currentSolution);
-		while (i < MAX_ITERATIONS) {
+		while (i < MAX_ITERATIONS && (System.currentTimeMillis() - time_start) < 0.95 * time_out) {
 			Solution oldSolution = currentSolution.clone();
 			HashSet<Solution> neighbors = chooseNeighbors(myVehicles, currentSolution);
 			currentSolution = localChoice( myVehicles, currentSolution, neighbors).clone();
@@ -755,8 +759,7 @@ public class Sls {
 		return currentSolution;
     }
 	public List<Plan> plan(List<Vehicle> myVehicles) {
-		long time_start = System.currentTimeMillis();
-        
+		
         Solution currentSolution = getBestSolution(myVehicles);
 		List<Plan> plans = transformSolutionToPlans( myVehicles, currentSolution).getKey();
 
