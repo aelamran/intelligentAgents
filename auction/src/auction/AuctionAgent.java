@@ -89,21 +89,31 @@ public class AuctionAgent implements AuctionBehavior {
 		timeout_setup = ls.get(LogistSettings.TimeoutKey.SETUP);
 	}
 
+	public boolean otherBidNull(Long[] bids) {
+		for (int i = 0; i < bids.length; i++) {
+			if (i != agent.id()) {
+				if (bids[i] == null) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	@Override
 	public void auctionResult(Task previous, int winner, Long[] bids) {
 
 		Double actualBidOther;
 		System.out.println(new ArrayList(Arrays.asList(bids)));
-		costByOther.add(getCostOfOpponent(previous, vehicles));
 
+		boolean otherBidNull = otherBidNull(bids);
 		if (winner == agent.id()) {
 			System.out.println("I won");
-			try {
+			if (!otherBidNull) {
 				actualBidOther = (double) Collections.max(Arrays.asList(bids));
 				bidsByOther.add(actualBidOther);
 				marginByOther.add(actualBidOther - getCostOfOpponent(previous, vehicles));
-			} catch (NullPointerException e) {
-				System.out.println("null");
+				costByOther.add(getCostOfOpponent(previous, vehicles));
 			}
 
 			tasksWon.add(previous);
@@ -114,12 +124,11 @@ public class AuctionAgent implements AuctionBehavior {
 			currentCity = previous.deliveryCity;
 		} else {
 			System.out.println("They won");
-			try {
+			if (!otherBidNull) {
 				actualBidOther = (double) Collections.min(Arrays.asList(bids));
 				bidsByOther.add(actualBidOther);
 				marginByOther.add(actualBidOther - getCostOfOpponent(previous, vehicles));
-			} catch (NullPointerException e) {
-				System.out.println("null");
+				costByOther.add(getCostOfOpponent(previous, vehicles));
 			}
 
 			tasksWonByOther.add(previous);
@@ -249,9 +258,12 @@ public class AuctionAgent implements AuctionBehavior {
 		 * marginalCost + computeMarginalBid(); System.out.println("no tasks");
 		 * System.out.println(marginalCost); return (long) Math.round(bid); } else
 		 */
-		if (roundNumber < firstSteps) {
+		if (roundNumber < firstSteps || bidsByOther.isEmpty()) {
 			marginalCost = getCostWithAddedTask(tasksWon, task, agent.vehicles(), cumulatedCost);
 			bid = marginalCost + computeMarginalBid();
+			if (bid <= 0){
+				bid = getCostOfOpponent(task, agent.vehicles())* 0.8;
+			}
 			return (long) Math.round(bid);
 		} else {
 			marginalCost = getCostWithAddedTask(tasksWon, task, agent.vehicles(), cumulatedCost);
