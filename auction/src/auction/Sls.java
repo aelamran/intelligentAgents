@@ -736,7 +736,7 @@ public class Sls {
 		Solution bestSolution = currentSolution.clone();
 		Double minCost = getCost( myVehicles, bestSolution);
 		double currentCost = getCost( myVehicles, currentSolution);
-		while (i < MAX_ITERATIONS && (System.currentTimeMillis() - time_start) < 0.95 * time_out) {
+		while (i < MAX_ITERATIONS && (System.currentTimeMillis() - time_start) < 0.85 * time_out) {
 			Solution oldSolution = currentSolution.clone();
 			HashSet<Solution> neighbors = chooseNeighbors(myVehicles, currentSolution);
 			currentSolution = localChoice( myVehicles, currentSolution, neighbors).clone();

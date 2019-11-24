@@ -50,7 +50,7 @@ public class AuctionAgent implements AuctionBehavior {
 	private Set<Task> tasksWonByOther;
 	private ArrayList<Double> bidsByOther;
 	private ArrayList<Double> marginByOther;
-	private int firstSteps = 10;
+	private int firstSteps = 3;
 	private int roundNumber = 0;
 	private ArrayList<Double> costByOther;
 	private long time_start_bid;
@@ -308,9 +308,9 @@ public class AuctionAgent implements AuctionBehavior {
 			}
 
 			System.out.println(costOfOpponent);
-			if (bid <= 0) {
+			/*if (bid <= 0) {
 				bid = marginalCost;
-			}
+			}*/
 
 			return (long) Math.round(bid);
 
