@@ -308,7 +308,12 @@ public class AuctionAgent implements AuctionBehavior {
 			}
 
 			System.out.println(costOfOpponent);
+			if (bid <= 0) {
+				bid = marginalCost;
+			}
+
 			return (long) Math.round(bid);
+
 			/*
 			 * if (vehicle.capacity() < task.weight) return null;
 			 * 
