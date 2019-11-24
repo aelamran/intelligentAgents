@@ -33,8 +33,7 @@ public class AuctionTemplate implements AuctionBehavior {
 	private City currentCity;
 
 	@Override
-	public void setup(Topology topology, TaskDistribution distribution,
-			Agent agent) {
+	public void setup(Topology topology, TaskDistribution distribution, Agent agent) {
 
 		this.topology = topology;
 		this.distribution = distribution;
@@ -53,7 +52,7 @@ public class AuctionTemplate implements AuctionBehavior {
 			currentCity = previous.deliveryCity;
 		}
 	}
-	
+
 	@Override
 	public Long askPrice(Task task) {
 
@@ -61,24 +60,22 @@ public class AuctionTemplate implements AuctionBehavior {
 			return null;
 
 		long distanceTask = task.pickupCity.distanceUnitsTo(task.deliveryCity);
-		long distanceSum = distanceTask
-				+ currentCity.distanceUnitsTo(task.pickupCity);
-		double marginalCost = Measures.unitsToKM(distanceSum
-				* vehicle.costPerKm());
+		long distanceSum = distanceTask + currentCity.distanceUnitsTo(task.pickupCity);
+		double marginalCost = Measures.unitsToKM(distanceSum * vehicle.costPerKm());
 
 		double ratio = 1.0 + (random.nextDouble() * 0.05 * task.id);
 
 		double bid = ratio * marginalCost;
-		//double bid = marginalCost + 100.0;
-		bid = 200;
+		// double bid = marginalCost + 100.0;
+		//bid = 200;
 		System.out.println(bid);
 		return (long) Math.round(bid);
 	}
 
 	@Override
 	public List<Plan> plan(List<Vehicle> vehicles, TaskSet tasks) {
-		
-//		System.out.println("Agent " + agent.id() + " has tasks " + tasks);
+
+		// System.out.println("Agent " + agent.id() + " has tasks " + tasks);
 
 		Plan planVehicle1 = naivePlan(vehicle, tasks);
 
@@ -87,6 +84,11 @@ public class AuctionTemplate implements AuctionBehavior {
 		while (plans.size() < vehicles.size())
 			plans.add(Plan.EMPTY);
 
+		for (Plan p : plans) {
+			System.out.println("plan x dummy distance " + p.totalDistance() * 5);
+
+		}
+		System.out.println("dummy reward" + tasks.rewardSum());
 		return plans;
 	}
 
@@ -110,6 +112,7 @@ public class AuctionTemplate implements AuctionBehavior {
 			// set current city
 			current = task.deliveryCity;
 		}
+
 		return plan;
 	}
 }

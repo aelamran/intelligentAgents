@@ -95,11 +95,17 @@ public class AuctionAgent implements AuctionBehavior {
 		Double actualBidOther;
 		System.out.println(new ArrayList(Arrays.asList(bids)));
 		costByOther.add(getCostOfOpponent(previous, vehicles));
+
 		if (winner == agent.id()) {
 			System.out.println("I won");
-			actualBidOther = (double) Collections.max(Arrays.asList(bids));
-			bidsByOther.add(actualBidOther);
-			marginByOther.add(actualBidOther - getCostOfOpponent(previous, vehicles));
+			try {
+				actualBidOther = (double) Collections.max(Arrays.asList(bids));
+				bidsByOther.add(actualBidOther);
+				marginByOther.add(actualBidOther - getCostOfOpponent(previous, vehicles));
+			} catch (NullPointerException e) {
+				System.out.println("null");
+			}
+
 			tasksWon.add(previous);
 
 			Sls sls = new Sls(topology, distribution, tasksWon, timeout_bid, time_start_bid);
@@ -108,10 +114,14 @@ public class AuctionAgent implements AuctionBehavior {
 			currentCity = previous.deliveryCity;
 		} else {
 			System.out.println("They won");
+			try {
+				actualBidOther = (double) Collections.min(Arrays.asList(bids));
+				bidsByOther.add(actualBidOther);
+				marginByOther.add(actualBidOther - getCostOfOpponent(previous, vehicles));
+			} catch (NullPointerException e) {
+				System.out.println("null");
+			}
 
-			actualBidOther = (double) Collections.min(Arrays.asList(bids));
-			bidsByOther.add(actualBidOther);
-			marginByOther.add(actualBidOther - getCostOfOpponent(previous, vehicles));
 			tasksWonByOther.add(previous);
 
 			Sls sls = new Sls(topology, distribution, tasksWonByOther, timeout_bid, time_start_bid);
@@ -360,10 +370,10 @@ public class AuctionAgent implements AuctionBehavior {
 		List<Plan> plans = sls.plan(vehicles);
 		System.out.println(plans);
 		for (Plan p : plans) {
-			System.out.println(p.totalDistance() * 5);
+			System.out.println("plan x distance " + p.totalDistance() * 5);
 
 		}
-		System.out.println(tasks.rewardSum());
+		System.out.println("My reward" + tasks.rewardSum());
 		return plans;
 
 		/*

@@ -755,7 +755,6 @@ public class Sls {
 		if (currentCost> minCost){
 			currentSolution = bestSolution;
 		}
-		System.out.println("min cost "+minCost);
 		return currentSolution;
     }
 	public List<Plan> plan(List<Vehicle> myVehicles) {
